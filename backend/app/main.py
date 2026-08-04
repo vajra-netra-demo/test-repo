@@ -1,11 +1,14 @@
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
-from app.routers import tools, report, discovery, tenants, endpoint, classify, regulation
+from app.routers import tools, report, discovery, tenants, endpoint, regulation
 from app.scheduler import start_scheduler
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="NETRA MVP API", version="0.1.0")
 
@@ -16,8 +19,17 @@ app.include_router(report.router)
 app.include_router(discovery.router)
 app.include_router(tenants.router)
 app.include_router(endpoint.router)
-app.include_router(classify.router)
 app.include_router(regulation.router)
+
+# presidio-analyzer + spacy (requirements-classification.txt) aren't in the
+# base requirements.txt — a real deploy without them shouldn't crash the
+# whole app on import, only leave /classify/* unavailable.
+try:
+    from app.routers import classify
+
+    app.include_router(classify.router)
+except ImportError as exc:
+    logger.warning("Sensitive-data classification disabled — %s not installed (see requirements-classification.txt). /classify/* routes are unavailable.", exc.name)
 
 
 @app.on_event("startup")
