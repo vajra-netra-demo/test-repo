@@ -1,0 +1,6 @@
+.env
+netra.db
+__pycache__/
+*.pyc
+uvicorn.log
+output/
