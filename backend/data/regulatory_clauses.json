@@ -69,6 +69,54 @@
       "framework": "IRDAI Cyber Security Guidelines",
       "topic": "Policyholder data localization",
       "summary": "Policyholder data must be stored in compliance with IRDAI's localization requirements; incidents involving this data must be reported to IRDAI within a defined timeline."
+    },
+    {
+      "id": "DPDP-CONSENT",
+      "framework": "DPDP Act 2023",
+      "topic": "Valid consent",
+      "summary": "Consent for processing personal data must be free, specific, informed, unconditional, and unambiguous, given through clear affirmative action, and must be as easily withdrawable as it was to give."
+    },
+    {
+      "id": "DPDP-DPO",
+      "framework": "DPDP Act 2023",
+      "topic": "Data Protection Officer appointment",
+      "summary": "A Significant Data Fiduciary (as notified by the government) must appoint a Data Protection Officer based in India and undertake periodic Data Protection Impact Assessments and independent audits."
+    },
+    {
+      "id": "DPDP-PENALTY",
+      "framework": "DPDP Act 2023",
+      "topic": "Statutory penalties",
+      "summary": "Failure to take reasonable security safeguards to prevent a personal data breach can attract a penalty of up to two hundred fifty crore rupees under the Act's penalty schedule."
+    },
+    {
+      "id": "RBI-DUE-DILIGENCE",
+      "framework": "RBI Cyber Security Framework",
+      "topic": "Third-party due diligence before onboarding",
+      "summary": "Regulated entities are expected to perform cybersecurity due diligence on a vendor before onboarding it, not only during periodic reviews after the fact."
+    },
+    {
+      "id": "RBI-DATA-LOCALIZATION",
+      "framework": "RBI Payment Data Localization Circular",
+      "topic": "Payment system data localization",
+      "summary": "Data related to payment systems must be stored only in India; where processing occurs abroad, the data must be deleted from systems outside India within a defined window after processing."
+    },
+    {
+      "id": "CERTIN-LOGS",
+      "framework": "CERT-In Directions, 2022",
+      "topic": "ICT log retention",
+      "summary": "Organizations must enable and securely maintain logs of their ICT systems for a rolling 180 days, within Indian jurisdiction, and provide them to CERT-In on request."
+    },
+    {
+      "id": "CERTIN-SUBSCRIBER-KYC",
+      "framework": "CERT-In Directions, 2022",
+      "topic": "Cloud/VPN provider subscriber records",
+      "summary": "Cloud service, VPN, and data center providers must maintain accurate customer/subscriber information for a defined retention period after any account is closed."
+    },
+    {
+      "id": "SEBI-INCIDENT-REPORT",
+      "framework": "SEBI CSCRF (2024)",
+      "topic": "Incident reporting timelines",
+      "summary": "SEBI-regulated entities must report cybersecurity incidents within prescribed timelines and maintain an incident response plan tiered to the entity's classification under the framework."
     }
   ]
 }

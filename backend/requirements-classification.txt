@@ -1,0 +1,7 @@
+# Sensitive-data classification (app/classification/) — NOT installed by
+# default requirements.txt since it pulls in spaCy + a language model.
+# After installing, also run: python -m spacy download en_core_web_sm
+# (deliberately the SMALL model, ~15MB — AnalyzerEngine() with no explicit
+# nlp_engine config defaults to the ~400MB large model instead).
+presidio-analyzer==2.2.364
+spacy>=3.4.4,<4.0.0

@@ -1,7 +1,6 @@
 import csv
 import io
 import json
-import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,6 +8,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.llm_provider import is_configured as llm_configured, PROVIDER, PROVIDER_REGION
 from app.models import SaaSTool, ScanSnapshot
 from app.risk_engine import load_clauses
 from app.evidence_report import generate_evidence_report, risk_level
@@ -54,7 +54,10 @@ def get_evidence_report(tenant_id: str = None, db: Session = Depends(get_db)):
         "risk_reasoning": t.risk_reasoning,
     } for t in tools]
 
-    mode = "REAL (Anthropic API)" if os.getenv("ANTHROPIC_API_KEY") else "MOCK (heuristic, no API key set)"
+    mode = (
+        f"REAL (Claude, via {PROVIDER} — {PROVIDER_REGION})" if llm_configured()
+        else "MOCK (heuristic, no LLM configured)"
+    )
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     output_path = OUTPUT_DIR / "netra_evidence_report.docx"

@@ -7,19 +7,18 @@ Delegates to app.scan_pipeline.run_full_cycle, same as live_scan.py and the
 API endpoint — kept as its own entry point since "assess_risks" is the
 name used throughout Day 3 docs, but it's no longer a separate code path.
 
-Uses a real LLM call if ANTHROPIC_API_KEY is set in the environment,
-otherwise falls back to the transparent mock heuristics in risk_engine.py
+Uses a real LLM call if app/llm_provider.py is configured (ANTHROPIC_FOUNDRY_API_KEY
+set), otherwise falls back to the transparent mock heuristics in risk_engine.py
 and triage_agent.py.
 """
 
-import os
-
 from app.database import SessionLocal
+from app.llm_provider import is_configured as llm_configured
 from app.scan_pipeline import run_full_cycle
 
 
 def run():
-    mode = "REAL (Anthropic API)" if os.getenv("ANTHROPIC_API_KEY") else "MOCK (heuristic, no API key set)"
+    mode = "REAL" if llm_configured() else "MOCK (heuristic, no LLM configured)"
     print(f"Running risk assessment + triage in {mode} mode...")
 
     db = SessionLocal()

@@ -1,0 +1,4 @@
+# Regulatory-clause retrieval (app/rag/) — NOT in default requirements.txt.
+# If unavailable in a given deploy, risk_engine.py falls back to the static
+# full clause list rather than failing.
+scikit-learn>=1.4

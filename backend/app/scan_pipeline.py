@@ -12,9 +12,11 @@ from sqlalchemy.orm import Session
 from app.models import SaaSTool
 from app.risk_engine import assess_tool
 from app.discovery_provider import fetch_live_tools, is_configured as live_scan_configured
+from app.network_intel import resolve_hosting_region
 from app.snapshot import record_snapshot
 from app.triage_agent import triage_tool
 from app.slack_notify import notify_high_risk_findings
+from app.siem.sentinel_connector import push_findings as push_to_sentinel
 
 HIGH_RISK_THRESHOLD = 70
 
@@ -39,6 +41,15 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
         live_tools = fetch_live_tools()
         db.query(SaaSTool).filter(SaaSTool.source == "live").delete()
         for record in live_tools:
+            # Real DNS + IP geolocation on the app's own vendor/slug — an
+            # honest substitute for real network-tap capture (see
+            # app/network_intel.py). Only attempted for live tools, since
+            # sample-data vendors are fictional and would just fail or
+            # produce a misleading match.
+            geo = resolve_hosting_region(record["vendor"])
+            if geo["hosting_region"] != "Unknown":
+                record["hosting_region"] = geo["hosting_region"]
+
             risk = assess_tool(record)
             triage_input = {**record, "source": "live", "remediated": False, **risk}
             triage = triage_tool(triage_input)
@@ -52,6 +63,7 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
                 source="live",
                 risk_score=risk["risk_score"], risk_flags=risk["risk_flags"], risk_reasoning=risk["risk_reasoning"],
                 triage_decision=triage["decision"], triage_reasoning=triage["reasoning"],
+                resolved_ip=geo["resolved_ip"], hosting_region_source=geo["hosting_region_source"],
             ))
             if risk["risk_score"] >= HIGH_RISK_THRESHOLD:
                 high_risk_live_findings.append({
@@ -65,7 +77,7 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
         if high_risk_live_findings:
             notify_high_risk_findings(high_risk_live_findings)
 
-    # Re-assess every tool (sample + live) so nothing is ever left stale.
+    # Re-assess every tool (sample + live + endpoint) so nothing is ever left stale.
     all_tools = db.query(SaaSTool).all()
     for t in all_tools:
         risk = assess_tool(_tool_to_dict(t))
@@ -78,6 +90,17 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
         t.triage_decision = triage["decision"]
         t.triage_reasoning = triage["reasoning"]
     db.commit()
+
+    # Push the complete current High-risk picture (every source, not just
+    # newly-discovered live findings) into the real Sentinel workspace, so a
+    # finding here is genuinely queryable there via KQL.
+    high_risk_all = [
+        {"tool_name": t.tool_name, "risk_score": t.risk_score, "risk_flags": t.risk_flags,
+         "tenant": t.tenant, "source": t.source}
+        for t in all_tools if (t.risk_score or 0) >= HIGH_RISK_THRESHOLD
+    ]
+    if high_risk_all:
+        push_to_sentinel(high_risk_all)
 
     snapshot = record_snapshot(db, triggered_by)
 

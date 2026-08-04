@@ -16,6 +16,8 @@ import json
 from datetime import datetime, date
 from pathlib import Path
 
+from app.llm_json import parse_llm_json
+
 CLAUSES_FILE = Path(__file__).resolve().parent.parent / "data" / "regulatory_clauses.json"
 
 BROAD_SCOPE_MARKERS = [
@@ -23,6 +25,11 @@ BROAD_SCOPE_MARKERS = [
     "full", "all files", "tenant-wide",
     # GitHub-style permission scopes (e.g. "administration:read", "organization_administration:read")
     "administration", "organization_administration",
+    # Browser-extension manifest permissions (endpoint agent, source="endpoint") —
+    # "<all_urls>" is a Chrome/Edge extension holding read access to every page
+    # the employee visits, including internal consoles; "clipboardread"/"webrequest"
+    # are similarly broad content-access grants outside the OAuth vocabulary above.
+    "<all_urls>", "clipboardread", "webrequest",
 ]
 
 # Provider-agnostic signal: many distinct granted permissions is itself a
@@ -74,21 +81,11 @@ Respond with ONLY a JSON object, no other text, in this exact shape:
 
 
 def call_llm_real(prompt: str) -> dict:
-    """Calls Claude via the Microsoft Foundry deployment. Only invoked when
-    ANTHROPIC_FOUNDRY_API_KEY is set."""
-    import anthropic  # lazy import — only required when this path actually runs
-    from app.config import ANTHROPIC_FOUNDRY_API_KEY, ANTHROPIC_FOUNDRY_RESOURCE
+    """Calls the real LLM via app/llm_provider.py. Only invoked when
+    llm_provider.is_configured() is True."""
+    from app.llm_provider import call_llm
 
-    client = anthropic.AnthropicFoundry(api_key=ANTHROPIC_FOUNDRY_API_KEY, resource=ANTHROPIC_FOUNDRY_RESOURCE)
-    response = client.messages.create(
-        model="claude-haiku-4-5",
-        max_tokens=400,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = response.content[0].text.strip()
-    if text.startswith("```"):
-        text = text.strip("`").removeprefix("json").strip()
-    return json.loads(text)
+    return parse_llm_json(call_llm(prompt, max_tokens=400))
 
 
 def call_llm_mock(tool: dict, clauses: list) -> dict:
@@ -157,11 +154,23 @@ def call_llm_mock(tool: dict, clauses: list) -> dict:
     }
 
 
-def assess_tool(tool: dict) -> dict:
-    from app.config import ANTHROPIC_FOUNDRY_API_KEY
+def _clauses_for_prompt(tool: dict) -> list:
+    """Real mode gets retrieved, tool-specific clauses (app/rag/retriever.py)
+    instead of the same static full list every time. Falls back to the
+    static list if the retrieval dependency (scikit-learn) isn't installed
+    in a given deploy — MOCK mode is never affected either way, since it
+    doesn't read clause content, only cites fixed IDs."""
+    try:
+        from app.rag.retriever import retrieve_relevant_clauses
+        return retrieve_relevant_clauses(tool, k=5)
+    except ImportError:
+        return load_clauses()
 
-    clauses = load_clauses()
-    if ANTHROPIC_FOUNDRY_API_KEY:
-        prompt = build_prompt(tool, clauses)
+
+def assess_tool(tool: dict) -> dict:
+    from app.llm_provider import is_configured
+
+    if is_configured():
+        prompt = build_prompt(tool, _clauses_for_prompt(tool))
         return call_llm_real(prompt)
-    return call_llm_mock(tool, clauses)
+    return call_llm_mock(tool, load_clauses())

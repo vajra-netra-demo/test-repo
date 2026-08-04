@@ -20,7 +20,7 @@ Two modes, same pattern as risk_engine.py:
 - MOCK mode: transparent rule-based heuristic, clearly labeled.
 """
 
-import json
+from app.llm_json import parse_llm_json
 
 
 def build_prompt(tool: dict) -> str:
@@ -47,19 +47,9 @@ this is safe to revoke without human review (e.g. clearly dormant AND high risk)
 
 
 def _call_llm_real(prompt: str) -> dict:
-    import anthropic  # lazy import — only required when this path actually runs
-    from app.config import ANTHROPIC_FOUNDRY_API_KEY, ANTHROPIC_FOUNDRY_RESOURCE
+    from app.llm_provider import call_llm
 
-    client = anthropic.AnthropicFoundry(api_key=ANTHROPIC_FOUNDRY_API_KEY, resource=ANTHROPIC_FOUNDRY_RESOURCE)
-    response = client.messages.create(
-        model="claude-haiku-4-5",
-        max_tokens=300,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = response.content[0].text.strip()
-    if text.startswith("```"):
-        text = text.strip("`").removeprefix("json").strip()
-    return json.loads(text)
+    return parse_llm_json(call_llm(prompt, max_tokens=300))
 
 
 def _triage_mock(tool: dict) -> dict:
@@ -113,8 +103,8 @@ def _triage_mock(tool: dict) -> dict:
 
 
 def triage_tool(tool: dict) -> dict:
-    from app.config import ANTHROPIC_FOUNDRY_API_KEY
+    from app.llm_provider import is_configured
 
-    if ANTHROPIC_FOUNDRY_API_KEY:
+    if is_configured():
         return _call_llm_real(build_prompt(tool))
     return _triage_mock(tool)

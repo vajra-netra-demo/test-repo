@@ -40,3 +40,32 @@ SLACK_WEBHOOK_URL = _env("SLACK_WEBHOOK_URL")
 # and triage_agent.py for REAL mode when set (falls back to MOCK otherwise).
 ANTHROPIC_FOUNDRY_API_KEY = _env("ANTHROPIC_FOUNDRY_API_KEY")
 ANTHROPIC_FOUNDRY_RESOURCE = _env("ANTHROPIC_FOUNDRY_RESOURCE")
+
+# Shared secret the endpoint discovery agent (netra-mvp/agent/netra_agent.py)
+# must present to POST /discovery/endpoint-report. Optional: if unset, the
+# endpoint is simply disabled (returns 503) rather than accepting unauthenticated
+# device reports.
+ENDPOINT_AGENT_TOKEN = _env("ENDPOINT_AGENT_TOKEN")
+
+# Tier-2 discovery providers — code shaped and ready, but credentials for
+# both belong to systems outside this team's control. Left unconfigured
+# (is_configured() returns False for both) until real access exists; see
+# app/manageengine_discovery.py / app/google_workspace_discovery.py.
+MANAGEENGINE_BASE_URL = _env("MANAGEENGINE_BASE_URL")
+MANAGEENGINE_API_KEY = _env("MANAGEENGINE_API_KEY")
+
+GOOGLE_WORKSPACE_CUSTOMER_ID = _env("GOOGLE_WORKSPACE_CUSTOMER_ID")
+GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON = _env("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_JSON")
+GOOGLE_WORKSPACE_ADMIN_EMAIL = _env("GOOGLE_WORKSPACE_ADMIN_EMAIL")
+
+# Microsoft Sentinel push connector (app/siem/sentinel_connector.py) — posts
+# real findings into a real Log Analytics workspace via the Azure Monitor
+# Logs Ingestion API. Provisioned via netra-mvp/scratch_sentinel_setup.sh
+# (Azure CLI), same subscription as the Foundry deployment. Optional: if
+# unset, push is silently skipped, same pattern as slack_notify.py.
+SENTINEL_DCE_ENDPOINT = _env("SENTINEL_DCE_ENDPOINT")
+SENTINEL_DCR_IMMUTABLE_ID = _env("SENTINEL_DCR_IMMUTABLE_ID")
+SENTINEL_STREAM_NAME = _env("SENTINEL_STREAM_NAME")
+SENTINEL_TENANT_ID = _env("SENTINEL_TENANT_ID")
+SENTINEL_CLIENT_ID = _env("SENTINEL_CLIENT_ID")
+SENTINEL_CLIENT_SECRET = _env("SENTINEL_CLIENT_SECRET")

@@ -5,10 +5,10 @@ Requires Day 3 to have run first (python -m app.assess_risks) so risk_score
 is populated — tools without a risk_score are skipped with a warning.
 """
 
-import os
 from pathlib import Path
 
 from app.database import SessionLocal
+from app.llm_provider import is_configured as llm_configured, PROVIDER, PROVIDER_REGION
 from app.models import SaaSTool
 from app.risk_engine import load_clauses
 from app.evidence_report import generate_evidence_report
@@ -38,7 +38,10 @@ def run(tenant_name: str = "Sample Tenant Pvt Ltd"):
             "risk_reasoning": t.risk_reasoning,
         } for t in assessed]
 
-        mode = "REAL (Anthropic API)" if os.getenv("ANTHROPIC_API_KEY") else "MOCK (heuristic, no API key set)"
+        mode = (
+            f"REAL (Claude, via {PROVIDER} — {PROVIDER_REGION})" if llm_configured()
+            else "MOCK (heuristic, no LLM configured)"
+        )
 
         OUTPUT_DIR.mkdir(exist_ok=True)
         output_path = OUTPUT_DIR / "netra_evidence_report.docx"

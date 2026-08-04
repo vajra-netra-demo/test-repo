@@ -51,6 +51,51 @@ class SaaSTool(Base):
     triage_decision = Column(String, nullable=True)  # "auto-fix" | "manual-review" | "ignore"
     triage_reasoning = Column(Text, nullable=True)
 
+    # Set for source="endpoint" rows (app/routers/endpoint.py) — which device
+    # this browser-extension/installed-software finding was reported by.
+    endpoint_device_id = Column(String, nullable=True, index=True)
+
+    # DNS/GeoIP-derived hosting signal (app/network_intel.py) — a lighter,
+    # honestly-labeled substitute for real network-tap capture. Null unless
+    # a lookup has actually run for this tool.
+    resolved_ip = Column(String, nullable=True)
+    hosting_region_source = Column(String, nullable=False, default="declared")  # "declared" | "geoip-lookup" | "unknown"
+
+
+class EndpointDevice(Base):
+    """One row per device that has ever checked in via the endpoint discovery
+    agent (netra-mvp/agent/netra_agent.py). Backs the per-employee/per-device
+    dashboard view — distinct from SaaSTool, which is one row per *finding*,
+    not per device."""
+
+    __tablename__ = "endpoint_devices"
+
+    id = Column(String, primary_key=True, index=True)  # stable device id the agent generates locally
+    hostname = Column(String, nullable=False)
+    os = Column(String, nullable=False)  # "windows" | "linux"
+    employee = Column(String, nullable=True, index=True)
+    department = Column(String, nullable=True)
+    first_checkin = Column(String, nullable=False)
+    last_checkin = Column(String, nullable=False)
+    agent_version = Column(String, nullable=True)
+
+
+class ClassificationScan(Base):
+    """One row per sensitive-data classification run (app/routers/classify.py).
+    Same spirit as ScanSnapshot: a history log, not a live document store —
+    `snippet` is truncated and exists only so a demo can show what was scanned,
+    never the full original content."""
+
+    __tablename__ = "classification_scans"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tenant = Column(String, nullable=True, index=True)
+    label = Column(String, nullable=True)  # user-supplied name for the sample, e.g. "Loan Application Form"
+    timestamp = Column(String, nullable=False, index=True)
+    entity_counts = Column(JSON, nullable=False, default=dict)  # {"PAN": 2, "AADHAAR": 1, ...}
+    sensitivity_score = Column(Integer, nullable=False, default=0)
+    snippet = Column(Text, nullable=True)  # truncated, redacted preview only
+
 
 class ScanSnapshot(Base):
     """One row per completed scan+assess cycle (manual or scheduled) — powers
