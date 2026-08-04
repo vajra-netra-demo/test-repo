@@ -5,7 +5,7 @@ regulatory clause set, and produces a risk_score / risk_flags /
 risk_reasoning triple.
 
 Two modes:
-- REAL mode: calls the Anthropic API if ANTHROPIC_API_KEY is set.
+- REAL mode: calls Claude via Microsoft Foundry if ANTHROPIC_FOUNDRY_API_KEY is set.
 - MOCK mode: a transparent, rule-based heuristic used when no API key is
   configured, so the ingest -> reason -> store -> serve pipeline can be
   proven end-to-end without live credentials. Every mock result is
@@ -75,16 +75,19 @@ Respond with ONLY a JSON object, no other text, in this exact shape:
 
 
 def call_llm_real(prompt: str) -> dict:
-    """Calls the Anthropic API. Only invoked when ANTHROPIC_API_KEY is set."""
+    """Calls Claude via the Microsoft Foundry deployment. Only invoked when
+    ANTHROPIC_FOUNDRY_API_KEY is set."""
     import anthropic  # lazy import — only required when this path actually runs
 
-    client = anthropic.Anthropic()
+    client = anthropic.AnthropicFoundry()
     response = client.messages.create(
-        model="claude-sonnet-4-5",
+        model="claude-haiku-4-5",
         max_tokens=400,
         messages=[{"role": "user", "content": prompt}],
     )
     text = response.content[0].text.strip()
+    if text.startswith("```"):
+        text = text.strip("`").removeprefix("json").strip()
     return json.loads(text)
 
 
@@ -156,7 +159,7 @@ def call_llm_mock(tool: dict, clauses: list) -> dict:
 
 def assess_tool(tool: dict) -> dict:
     clauses = load_clauses()
-    if os.getenv("ANTHROPIC_API_KEY"):
+    if os.getenv("ANTHROPIC_FOUNDRY_API_KEY"):
         prompt = build_prompt(tool, clauses)
         return call_llm_real(prompt)
     return call_llm_mock(tool, clauses)

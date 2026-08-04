@@ -5,6 +5,7 @@ python-dotenv>=1.0
 pydantic>=2.9
 python-docx>=1.2
 requests>=2.32
+anthropic>=0.120
 
 # Postgres driver is NOT installed by default — the app runs on SQLite out of
 # the box (zero setup). Only install requirements-postgres.txt if you switch

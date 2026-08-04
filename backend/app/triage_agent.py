@@ -16,7 +16,7 @@ a recommendation into an unsupervised auto-execute would be a materially
 different, riskier feature — not something to slide in silently.
 
 Two modes, same pattern as risk_engine.py:
-- REAL mode: calls the Anthropic API if ANTHROPIC_API_KEY is set.
+- REAL mode: calls Claude via Microsoft Foundry if ANTHROPIC_FOUNDRY_API_KEY is set.
 - MOCK mode: transparent rule-based heuristic, clearly labeled.
 """
 
@@ -50,13 +50,15 @@ this is safe to revoke without human review (e.g. clearly dormant AND high risk)
 def _call_llm_real(prompt: str) -> dict:
     import anthropic  # lazy import — only required when this path actually runs
 
-    client = anthropic.Anthropic()
+    client = anthropic.AnthropicFoundry()
     response = client.messages.create(
-        model="claude-sonnet-4-5",
+        model="claude-haiku-4-5",
         max_tokens=300,
         messages=[{"role": "user", "content": prompt}],
     )
     text = response.content[0].text.strip()
+    if text.startswith("```"):
+        text = text.strip("`").removeprefix("json").strip()
     return json.loads(text)
 
 
@@ -111,6 +113,6 @@ def _triage_mock(tool: dict) -> dict:
 
 
 def triage_tool(tool: dict) -> dict:
-    if os.getenv("ANTHROPIC_API_KEY"):
+    if os.getenv("ANTHROPIC_FOUNDRY_API_KEY"):
         return _call_llm_real(build_prompt(tool))
     return _triage_mock(tool)
