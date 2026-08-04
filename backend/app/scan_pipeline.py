@@ -14,6 +14,9 @@ from app.risk_engine import assess_tool
 from app.discovery_provider import fetch_live_tools, is_configured as live_scan_configured
 from app.snapshot import record_snapshot
 from app.triage_agent import triage_tool
+from app.slack_notify import notify_high_risk_findings
+
+HIGH_RISK_THRESHOLD = 70
 
 
 def _tool_to_dict(t: SaaSTool) -> dict:
@@ -29,6 +32,8 @@ def _tool_to_dict(t: SaaSTool) -> dict:
 
 def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
     live_ingested = 0
+
+    high_risk_live_findings = []
 
     if live_scan_configured():
         live_tools = fetch_live_tools()
@@ -48,8 +53,17 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
                 risk_score=risk["risk_score"], risk_flags=risk["risk_flags"], risk_reasoning=risk["risk_reasoning"],
                 triage_decision=triage["decision"], triage_reasoning=triage["reasoning"],
             ))
+            if risk["risk_score"] >= HIGH_RISK_THRESHOLD:
+                high_risk_live_findings.append({
+                    "tool_name": record["tool_name"],
+                    "risk_score": risk["risk_score"],
+                    "risk_flags": risk["risk_flags"],
+                })
         live_ingested = len(live_tools)
         db.commit()
+
+        if high_risk_live_findings:
+            notify_high_risk_findings(high_risk_live_findings)
 
     # Re-assess every tool (sample + live) so nothing is ever left stale.
     all_tools = db.query(SaaSTool).all()
