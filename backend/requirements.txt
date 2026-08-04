@@ -12,3 +12,8 @@ anthropic>=0.120
 # install step. The app still runs on SQLite out of the box either way;
 # this driver simply sits unused if DATABASE_URL stays sqlite://.
 psycopg[binary]>=3.2
+
+# TF-IDF regulatory-clause retrieval (app/rag/) — no model download needed,
+# small pure-wheel install, safe to bundle by default. /regulation/search
+# has no ImportError fallback, unlike risk_engine.py's internal RAG call.
+scikit-learn>=1.4
