@@ -5,6 +5,7 @@ from app.database import get_db
 from app.discovery_provider import is_configured, active_provider
 from app.scan_pipeline import run_full_cycle
 from app.scheduler import get_scheduler_status
+from app.siem.sentinel_connector import is_configured as sentinel_is_configured
 
 router = APIRouter(prefix="/discovery", tags=["discovery"])
 
@@ -15,6 +16,7 @@ def live_scan_status():
         "live_scan_configured": is_configured(),
         "provider": active_provider(),
         "scheduler": get_scheduler_status(),
+        "sentinel_configured": sentinel_is_configured(),
     }
 
 

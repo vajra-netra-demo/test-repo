@@ -177,6 +177,29 @@
     font-size: 14px; color: var(--low-dark); font-weight: 600; margin-bottom: 10px;
   }
   .roi-source { font-size: 10.5px; color: var(--muted); line-height: 1.5; }
+
+  /* ---------- Endpoint / Classify / Regulation views ---------- */
+  .view { display: none; }
+  .view.active { display: block; }
+  textarea#classifyText {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; resize: vertical;
+  }
+  .field-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .field-row label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .field-row input[type="text"] {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
+  }
+  .sensitivity-score { font-size: 28px; font-weight: 800; }
+  .sensitivity-score.High { color: var(--high); }
+  .sensitivity-score.Medium { color: var(--med); }
+  .sensitivity-score.Low { color: var(--low); }
+  .entity-chip { display: inline-block; background: var(--accent-light); color: var(--accent-dark); border-radius: 6px; padding: 3px 10px; margin: 2px 6px 2px 0; font-size: 12px; font-weight: 700; }
+  .reg-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; }
+  .reg-card .framework { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--accent-dark); }
+  .reg-card .topic { font-size: 14px; font-weight: 700; margin: 3px 0 6px; }
+  .reg-card .summary { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .config-note { font-size: 12.5px; color: var(--muted); background: #fafbfd; border: 1px dashed var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -187,12 +210,16 @@
       <div class="tagline">Data Privacy & Shadow-IT Discovery</div>
     </div>
     <div class="nav">
-      <div class="nav-item active"><span class="nav-icon">&#9632;</span> Dashboard</div>
+      <div class="nav-item active" data-view="dashboard"><span class="nav-icon">&#9632;</span> Dashboard</div>
+      <div class="nav-item" data-view="endpoints"><span class="nav-icon">&#9632;</span> Endpoint Devices</div>
+      <div class="nav-item" data-view="classify"><span class="nav-icon">&#9632;</span> Classify Text</div>
+      <div class="nav-item" data-view="regulation"><span class="nav-icon">&#9632;</span> Regulation Search</div>
     </div>
     <div class="sidebar-footer">Team Vajra<br>Swaraj CloudForge Hackathon 2026</div>
   </div>
 
   <div class="main">
+  <div id="view-dashboard" class="view active">
     <div class="topbar">
       <div>
         <h1>Discovery Overview</h1>
@@ -201,6 +228,7 @@
       <div class="actions">
         <span class="status-pill" id="scanStatus">checking live scan status…</span>
         <span class="status-pill" id="schedulerStatus">checking scheduler…</span>
+        <span class="status-pill" id="sentinelStatus">checking Sentinel…</span>
         <button class="secondary" id="csvBtn">&#8681; Download CSV</button>
         <button class="secondary" id="reportBtn">&#8681; Download Evidence Report</button>
         <button id="scanBtn">&#8635; Run Live Scan</button>
@@ -320,7 +348,72 @@
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
+  </div><!-- /view-dashboard -->
+
+  <div id="view-endpoints" class="view">
+    <div class="topbar">
+      <div>
+        <h1>Endpoint Devices</h1>
+        <p class="subtitle">Devices reporting via the NETRA endpoint agent — reads real browser extensions and installed software, catching what OAuth-based discovery structurally can't see (see agent/README.md to enroll a machine)</p>
+      </div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Hostname</th><th>OS</th><th>Employee</th><th>Department</th>
+            <th>First Check-in</th><th>Last Check-in</th><th>Agent Version</th><th>Findings</th>
+          </tr>
+        </thead>
+        <tbody id="endpointsBody"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
   </div>
+
+  <div id="view-classify" class="view">
+    <div class="topbar">
+      <div>
+        <h1>Sensitive-Data Classification</h1>
+        <p class="subtitle">Real Presidio pattern recognizers for PAN, Aadhaar, IFSC, GSTIN and common PII. Paste/upload proof-of-detection endpoint — not yet wired to a live document source (SharePoint/Drive), so this scans whatever text you paste in, not an automated document scanner.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="field-row" style="align-items: flex-start; flex-direction: column;">
+        <label for="classifyText">Text to scan</label>
+        <textarea id="classifyText" rows="6" placeholder="Paste sample text containing e.g. a PAN, Aadhaar, IFSC, or GSTIN number…"></textarea>
+      </div>
+      <div class="field-row">
+        <label for="classifyLabel">Label (optional):</label>
+        <input type="text" id="classifyLabel" placeholder="e.g. HR offer letter">
+        <button id="classifyBtn">Classify</button>
+      </div>
+      <div id="classifyResult"></div>
+    </div>
+    <div class="section-title">Recent Scans</div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Time</th><th>Label</th><th>Entities Found</th><th>Sensitivity</th><th>Snippet</th></tr></thead>
+        <tbody id="classifyHistoryBody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-regulation" class="view">
+    <div class="topbar">
+      <div>
+        <h1>Regulation Search</h1>
+        <p class="subtitle">Real TF-IDF retrieval over the DPDP/RBI/CERT-In/SEBI clause library — try different queries and notice the results actually change, the same proof-it's-not-static bar used for the LLM itself</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="field-row">
+        <input type="text" id="regQuery" class="search-box" style="width:340px;" placeholder="e.g. cross-border data transfer, incident reporting…">
+        <button id="regSearchBtn">Search</button>
+      </div>
+      <div id="regResults"></div>
+    </div>
+  </div><!-- /view-regulation -->
+  </div><!-- /main -->
 
   <script>
     let currentFilter = "all";
@@ -352,6 +445,7 @@
     async function loadStatus() {
       const pill = document.getElementById("scanStatus");
       const schedPill = document.getElementById("schedulerStatus");
+      const sentinelPill = document.getElementById("sentinelStatus");
       const scanBtn = document.getElementById("scanBtn");
       try {
         const res = await fetch("/discovery/status");
@@ -373,8 +467,163 @@
         } else {
           schedPill.textContent = "Auto re-scan: disabled";
         }
+
+        if (data.sentinel_configured) {
+          sentinelPill.textContent = "Sentinel: connected";
+          sentinelPill.classList.add("live");
+        } else {
+          sentinelPill.textContent = "Sentinel: not configured";
+        }
       } catch (e) {
         pill.textContent = "Could not reach API";
+      }
+    }
+
+    // ---------- View switching (sidebar nav) ----------
+    document.querySelectorAll(".nav-item[data-view]").forEach(item => {
+      item.addEventListener("click", () => {
+        document.querySelectorAll(".nav-item[data-view]").forEach(n => n.classList.remove("active"));
+        item.classList.add("active");
+        document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+        document.getElementById(`view-${item.dataset.view}`).classList.add("active");
+        if (item.dataset.view === "endpoints") loadEndpoints();
+        if (item.dataset.view === "classify") loadClassifyHistory();
+      });
+    });
+
+    // ---------- Endpoint Devices ----------
+    async function loadEndpoints() {
+      const tbody = document.getElementById("endpointsBody");
+      try {
+        const [devicesRes, toolsRes] = await Promise.all([
+          fetch("/discovery/endpoints"),
+          fetch("/tools"),
+        ]);
+        const devices = await devicesRes.json();
+        const tools = await toolsRes.json();
+
+        if (devices.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="empty">No devices have checked in yet — run agent/netra_agent.py on a machine to enroll it. See agent/README.md.</td></tr>`;
+          return;
+        }
+
+        const findingCounts = {};
+        tools.forEach(t => {
+          if (t.source === "endpoint" && t.endpoint_device_id) {
+            findingCounts[t.endpoint_device_id] = (findingCounts[t.endpoint_device_id] || 0) + 1;
+          }
+        });
+
+        tbody.innerHTML = devices.map(d => `
+          <tr>
+            <td>${d.hostname}</td>
+            <td>${d.os}</td>
+            <td>${d.employee || "—"}</td>
+            <td>${d.department || "—"}</td>
+            <td>${d.first_checkin}</td>
+            <td>${d.last_checkin}</td>
+            <td>${d.agent_version || "—"}</td>
+            <td>${findingCounts[d.id] || 0}</td>
+          </tr>`).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">Could not reach API.</td></tr>`;
+      }
+    }
+
+    // ---------- Sensitive-Data Classification ----------
+    async function runClassify() {
+      const btn = document.getElementById("classifyBtn");
+      const text = document.getElementById("classifyText").value.trim();
+      const label = document.getElementById("classifyLabel").value.trim();
+      const resultDiv = document.getElementById("classifyResult");
+      if (!text) { showToast("Paste some text to classify first.", "error"); return; }
+
+      btn.disabled = true;
+      btn.textContent = "Classifying…";
+      try {
+        const res = await fetch("/classify/text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, label: label || null }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          resultDiv.innerHTML = `<div class="config-note">Classification unavailable: ${data.detail || "not configured on this deployment (presidio-analyzer not installed — see the handover doc's operational caveats)."}</div>`;
+          return;
+        }
+        const level = data.sensitivity_score >= 70 ? "High" : data.sensitivity_score >= 30 ? "Medium" : "Low";
+        const entityChips = Object.entries(data.entity_counts || {}).map(([k, v]) => `<span class="entity-chip">${k}: ${v}</span>`).join("") || "<span style='color:var(--muted)'>No sensitive entities detected.</span>";
+        // data.examples is keyed by entity type: { IN_PAN: [{masked_value, confidence}], ... }
+        const examples = Object.entries(data.examples || {}).flatMap(([entityType, items]) =>
+          (items || []).map(it => `<div style="font-size:12.5px; color:var(--muted); margin-top:4px;">${entityType}: <strong style="color:var(--text)">${it.masked_value}</strong> (confidence ${Math.round((it.confidence || 0) * 100)}%)</div>`)
+        ).join("");
+        resultDiv.innerHTML = `
+          <div class="panel" style="margin-top:14px; background:#fafbfd;">
+            <div class="sensitivity-score ${level}">${data.sensitivity_score}<span style="font-size:14px; color:var(--muted); font-weight:600;"> / 100 — ${level}</span></div>
+            <div style="margin-top:10px;">${entityChips}</div>
+            ${examples ? `<div style="margin-top:8px;"><strong style="font-size:12px;">Examples (masked):</strong>${examples}</div>` : ""}
+          </div>`;
+        showToast("Classification complete.", "success");
+        loadClassifyHistory();
+      } catch (e) {
+        resultDiv.innerHTML = `<div class="config-note">Request failed: ${e}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Classify";
+      }
+    }
+
+    async function loadClassifyHistory() {
+      const tbody = document.getElementById("classifyHistoryBody");
+      try {
+        const res = await fetch("/classify/history?limit=20");
+        if (!res.ok) {
+          tbody.innerHTML = `<tr><td colspan="5" class="config-note">Classification unavailable on this deployment (presidio-analyzer not installed).</td></tr>`;
+          return;
+        }
+        const scans = await res.json();
+        if (scans.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="empty">No scans yet — classify some text above.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = scans.map(s => {
+          const total = Object.values(s.entity_counts || {}).reduce((a, b) => a + b, 0);
+          const level = s.sensitivity_score >= 70 ? "High" : s.sensitivity_score >= 30 ? "Medium" : "Low";
+          return `
+            <tr>
+              <td>${s.timestamp}</td>
+              <td>${s.label || "—"}</td>
+              <td>${total} entit${total === 1 ? "y" : "ies"}</td>
+              <td><span class="badge ${level}">${s.sensitivity_score}</span></td>
+              <td>${(s.snippet || "").replace(/</g, "&lt;")}</td>
+            </tr>`;
+        }).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Could not reach API.</td></tr>`;
+      }
+    }
+
+    // ---------- Regulation Search ----------
+    async function runRegulationSearch() {
+      const query = document.getElementById("regQuery").value.trim();
+      const resultsDiv = document.getElementById("regResults");
+      if (!query) { showToast("Enter a search term first.", "error"); return; }
+      resultsDiv.innerHTML = `<div class="empty">Searching…</div>`;
+      try {
+        const res = await fetch(`/regulation/search?q=${encodeURIComponent(query)}&k=5`);
+        const data = await res.json();
+        if (!res.ok || !data.results || data.results.length === 0) {
+          resultsDiv.innerHTML = `<div class="config-note">No results (or regulation search unavailable on this deployment).</div>`;
+          return;
+        }
+        resultsDiv.innerHTML = data.results.map(c => `
+          <div class="reg-card">
+            <div class="framework">${c.framework}</div>
+            <div class="topic">${c.topic}</div>
+            <div class="summary">${c.summary}</div>
+          </div>`).join("");
+      } catch (e) {
+        resultsDiv.innerHTML = `<div class="config-note">Request failed: ${e}</div>`;
       }
     }
 
@@ -858,6 +1107,9 @@
       loadTools();
     });
     document.getElementById("roiEmployees").addEventListener("input", () => renderRoiCalculator(allTools, allTools.filter(t => riskLevel(t.risk_score) === "High").length));
+    document.getElementById("classifyBtn").addEventListener("click", runClassify);
+    document.getElementById("regSearchBtn").addEventListener("click", runRegulationSearch);
+    document.getElementById("regQuery").addEventListener("keydown", (e) => { if (e.key === "Enter") runRegulationSearch(); });
 
     loadStatus();
     loadTenantProfiles();
