@@ -20,7 +20,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_ORG = os.getenv("GITHUB_ORG")
 
 # Background scheduler — periodic re-scan + re-assess. Set to "0" to disable.
-SCAN_INTERVAL_SECONDS = int(os.getenv("SCAN_INTERVAL_SECONDS", "120"))
+SCAN_INTERVAL_SECONDS = int(os.getenv("SCAN_INTERVAL_SECONDS", "1800"))
 
 # Slack Incoming Webhook — posts a real alert when a live scan finds a new
 # High-risk tool. Optional: if unset, notification is simply skipped.
