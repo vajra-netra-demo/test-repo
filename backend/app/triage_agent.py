@@ -21,7 +21,6 @@ Two modes, same pattern as risk_engine.py:
 """
 
 import json
-import os
 
 
 def build_prompt(tool: dict) -> str:
@@ -49,8 +48,9 @@ this is safe to revoke without human review (e.g. clearly dormant AND high risk)
 
 def _call_llm_real(prompt: str) -> dict:
     import anthropic  # lazy import — only required when this path actually runs
+    from app.config import ANTHROPIC_FOUNDRY_API_KEY, ANTHROPIC_FOUNDRY_RESOURCE
 
-    client = anthropic.AnthropicFoundry()
+    client = anthropic.AnthropicFoundry(api_key=ANTHROPIC_FOUNDRY_API_KEY, resource=ANTHROPIC_FOUNDRY_RESOURCE)
     response = client.messages.create(
         model="claude-haiku-4-5",
         max_tokens=300,
@@ -113,6 +113,8 @@ def _triage_mock(tool: dict) -> dict:
 
 
 def triage_tool(tool: dict) -> dict:
-    if os.getenv("ANTHROPIC_FOUNDRY_API_KEY"):
+    from app.config import ANTHROPIC_FOUNDRY_API_KEY
+
+    if ANTHROPIC_FOUNDRY_API_KEY:
         return _call_llm_real(build_prompt(tool))
     return _triage_mock(tool)

@@ -13,7 +13,6 @@ Two modes:
 """
 
 import json
-import os
 from datetime import datetime, date
 from pathlib import Path
 
@@ -78,8 +77,9 @@ def call_llm_real(prompt: str) -> dict:
     """Calls Claude via the Microsoft Foundry deployment. Only invoked when
     ANTHROPIC_FOUNDRY_API_KEY is set."""
     import anthropic  # lazy import — only required when this path actually runs
+    from app.config import ANTHROPIC_FOUNDRY_API_KEY, ANTHROPIC_FOUNDRY_RESOURCE
 
-    client = anthropic.AnthropicFoundry()
+    client = anthropic.AnthropicFoundry(api_key=ANTHROPIC_FOUNDRY_API_KEY, resource=ANTHROPIC_FOUNDRY_RESOURCE)
     response = client.messages.create(
         model="claude-haiku-4-5",
         max_tokens=400,
@@ -158,8 +158,10 @@ def call_llm_mock(tool: dict, clauses: list) -> dict:
 
 
 def assess_tool(tool: dict) -> dict:
+    from app.config import ANTHROPIC_FOUNDRY_API_KEY
+
     clauses = load_clauses()
-    if os.getenv("ANTHROPIC_FOUNDRY_API_KEY"):
+    if ANTHROPIC_FOUNDRY_API_KEY:
         prompt = build_prompt(tool, clauses)
         return call_llm_real(prompt)
     return call_llm_mock(tool, clauses)
