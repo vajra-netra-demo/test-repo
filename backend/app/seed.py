@@ -39,6 +39,7 @@ def seed():
                 data_categories_accessed=record["data_categories_accessed"],
                 hosting_region=record["hosting_region"],
                 source="sample",
+                tenant=record.get("tenant"),
             ))
 
         db.commit()

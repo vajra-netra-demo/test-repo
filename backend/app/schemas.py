@@ -20,6 +20,7 @@ class SaaSToolOut(BaseModel):
     data_categories_accessed: List[str]
     hosting_region: str
     source: str = "sample"
+    tenant: Optional[str] = None
     risk_score: Optional[int] = None
     risk_flags: Optional[List[str]] = None
     risk_reasoning: Optional[str] = None

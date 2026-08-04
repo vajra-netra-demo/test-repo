@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "description": "Fictional customer profiles used to make the business case concrete in the pitch. Not real companies — chosen to map directly to the three regulatory frameworks with the strongest narrative: RBI (BFSI), DPDP-general (MSME, an explicitly underserved segment), and CERT-In (Government, its broadest-reaching framework)."
+  },
+  "profiles": [
+    {
+      "id": "bfsi-bank",
+      "name": "Suvidha Cooperative Bank",
+      "industry": "BFSI — Regional Cooperative Bank",
+      "employee_count": "~1,200",
+      "primary_framework": "RBI Cyber Security Framework",
+      "tagline": "A mid-sized cooperative bank where 'the vendor IT doesn't know about yet' is a real RBI supervisory-action risk, not a hypothetical.",
+      "story": "Suvidha Bank is RBI-regulated and must keep full end-to-end payment transaction data within India. Its Finance and Operations teams have quietly connected invoice-processing and legacy document tools over the years — exactly the kind of unmanaged vendor exposure RBI holds the bank fully accountable for, whether IT approved it or not."
+    },
+    {
+      "id": "msme-exporter",
+      "name": "Meridian Exports Pvt Ltd",
+      "industry": "MSME — Textile & Goods Exporter",
+      "employee_count": "~180",
+      "primary_framework": "DPDP Act 2023",
+      "tagline": "A growing exporter with no dedicated security team — exactly the underserved segment every competitor prices out.",
+      "story": "Meridian's Sales and Marketing teams juggle international clients across time zones, connecting CRM sync tools, translation services, and scheduling apps to move fast. None of it was ever centrally reviewed — a single dormant CRM export tool from a departed employee still holds customer PII today."
+    },
+    {
+      "id": "govt-digital",
+      "name": "State Directorate of Digital Services",
+      "industry": "Government — State IT Directorate",
+      "employee_count": "~450",
+      "primary_framework": "CERT-In Directions, 2022",
+      "tagline": "CERT-In's broadest-reaching framework applies here — and a 6-hour incident clock is unforgiving if the incident is hiding in an unmonitored tool.",
+      "story": "The Directorate's engineering and HR teams have connected developer productivity tools and employee-engagement platforms independently. Under CERT-In, any of these becomes a reportable-incident risk the moment something goes wrong — and right now, nobody has a single list of what's actually connected."
+    }
+  ]
+}

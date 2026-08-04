@@ -20,8 +20,12 @@
         "https://www.googleapis.com/auth/drive",
         "https://www.googleapis.com/auth/gmail.readonly"
       ],
-      "data_categories_accessed": ["Email content", "All Drive files"],
-      "hosting_region": "United States"
+      "data_categories_accessed": [
+        "Email content",
+        "All Drive files"
+      ],
+      "hosting_region": "United States",
+      "tenant": "govt-digital"
     },
     {
       "id": "t002",
@@ -38,8 +42,12 @@
         "https://www.googleapis.com/auth/drive.readonly",
         "https://www.googleapis.com/auth/userinfo.profile"
       ],
-      "data_categories_accessed": ["All Drive files (read)", "Employee profile data"],
-      "hosting_region": "United States"
+      "data_categories_accessed": [
+        "All Drive files (read)",
+        "Employee profile data"
+      ],
+      "hosting_region": "United States",
+      "tenant": "govt-digital"
     },
     {
       "id": "t003",
@@ -52,9 +60,15 @@
       "first_connected": "2025-02-20",
       "last_used": "2026-08-01",
       "monthly_active_users": 24,
-      "oauth_scopes": ["Files.ReadWrite", "User.Read"],
-      "data_categories_accessed": ["Project files (scoped folder)"],
-      "hosting_region": "European Union"
+      "oauth_scopes": [
+        "Files.ReadWrite",
+        "User.Read"
+      ],
+      "data_categories_accessed": [
+        "Project files (scoped folder)"
+      ],
+      "hosting_region": "European Union",
+      "tenant": "govt-digital"
     },
     {
       "id": "t004",
@@ -67,9 +81,17 @@
       "first_connected": "2025-04-10",
       "last_used": "2026-07-30",
       "monthly_active_users": 6,
-      "oauth_scopes": ["Mail.Read", "Files.ReadWrite.All"],
-      "data_categories_accessed": ["Email content", "All files (tenant-wide)", "Vendor bank account details"],
-      "hosting_region": "United States"
+      "oauth_scopes": [
+        "Mail.Read",
+        "Files.ReadWrite.All"
+      ],
+      "data_categories_accessed": [
+        "Email content",
+        "All files (tenant-wide)",
+        "Vendor bank account details"
+      ],
+      "hosting_region": "United States",
+      "tenant": "bfsi-bank"
     },
     {
       "id": "t005",
@@ -86,8 +108,11 @@
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/admin.directory.user.readonly"
       ],
-      "data_categories_accessed": ["Employee directory (name, email, department)"],
-      "hosting_region": "Singapore"
+      "data_categories_accessed": [
+        "Employee directory (name, email, department)"
+      ],
+      "hosting_region": "Singapore",
+      "tenant": "govt-digital"
     },
     {
       "id": "t006",
@@ -104,8 +129,12 @@
         "https://www.googleapis.com/auth/gmail.modify",
         "https://www.googleapis.com/auth/contacts"
       ],
-      "data_categories_accessed": ["Email content (read/send)", "Customer contact details"],
-      "hosting_region": "United States"
+      "data_categories_accessed": [
+        "Email content (read/send)",
+        "Customer contact details"
+      ],
+      "hosting_region": "United States",
+      "tenant": "msme-exporter"
     },
     {
       "id": "t007",
@@ -118,9 +147,15 @@
       "first_connected": "2025-01-08",
       "last_used": "2026-08-02",
       "monthly_active_users": 18,
-      "oauth_scopes": ["Repo.Read", "User.Read"],
-      "data_categories_accessed": ["Source code repositories"],
-      "hosting_region": "United States"
+      "oauth_scopes": [
+        "Repo.Read",
+        "User.Read"
+      ],
+      "data_categories_accessed": [
+        "Source code repositories"
+      ],
+      "hosting_region": "United States",
+      "tenant": "govt-digital"
     },
     {
       "id": "t008",
@@ -133,9 +168,17 @@
       "first_connected": "2023-11-22",
       "last_used": "2024-02-14",
       "monthly_active_users": 0,
-      "oauth_scopes": ["Files.ReadWrite.All", "Mail.Send"],
-      "data_categories_accessed": ["Customer bank details", "Invoices", "Email send capability"],
-      "hosting_region": "United Kingdom"
+      "oauth_scopes": [
+        "Files.ReadWrite.All",
+        "Mail.Send"
+      ],
+      "data_categories_accessed": [
+        "Customer bank details",
+        "Invoices",
+        "Email send capability"
+      ],
+      "hosting_region": "United Kingdom",
+      "tenant": "bfsi-bank"
     },
     {
       "id": "t009",
@@ -148,9 +191,14 @@
       "first_connected": "2025-05-19",
       "last_used": "2026-07-29",
       "monthly_active_users": 9,
-      "oauth_scopes": ["https://www.googleapis.com/auth/calendar"],
-      "data_categories_accessed": ["Calendar events"],
-      "hosting_region": "India"
+      "oauth_scopes": [
+        "https://www.googleapis.com/auth/calendar"
+      ],
+      "data_categories_accessed": [
+        "Calendar events"
+      ],
+      "hosting_region": "India",
+      "tenant": "msme-exporter"
     },
     {
       "id": "t010",
@@ -163,9 +211,18 @@
       "first_connected": "2025-08-14",
       "last_used": "2026-08-01",
       "monthly_active_users": 5,
-      "oauth_scopes": ["OnlineMeetings.Read", "Mail.Read", "Files.ReadWrite.All"],
-      "data_categories_accessed": ["Meeting recordings/transcripts", "Email content", "All files (tenant-wide)"],
-      "hosting_region": "United States"
+      "oauth_scopes": [
+        "OnlineMeetings.Read",
+        "Mail.Read",
+        "Files.ReadWrite.All"
+      ],
+      "data_categories_accessed": [
+        "Meeting recordings/transcripts",
+        "Email content",
+        "All files (tenant-wide)"
+      ],
+      "hosting_region": "United States",
+      "tenant": "bfsi-bank"
     },
     {
       "id": "t011",
@@ -178,9 +235,14 @@
       "first_connected": "2025-10-02",
       "last_used": "2026-08-02",
       "monthly_active_users": 4,
-      "oauth_scopes": ["https://www.googleapis.com/auth/drive.file"],
-      "data_categories_accessed": ["App-created files only"],
-      "hosting_region": "India"
+      "oauth_scopes": [
+        "https://www.googleapis.com/auth/drive.file"
+      ],
+      "data_categories_accessed": [
+        "App-created files only"
+      ],
+      "hosting_region": "India",
+      "tenant": "msme-exporter"
     },
     {
       "id": "t012",
@@ -193,9 +255,16 @@
       "first_connected": "2024-09-09",
       "last_used": "2026-07-31",
       "monthly_active_users": 22,
-      "oauth_scopes": ["Mail.ReadWrite", "Contacts.Read"],
-      "data_categories_accessed": ["Customer support emails", "Customer PII (name, phone, address)"],
-      "hosting_region": "United States"
+      "oauth_scopes": [
+        "Mail.ReadWrite",
+        "Contacts.Read"
+      ],
+      "data_categories_accessed": [
+        "Customer support emails",
+        "Customer PII (name, phone, address)"
+      ],
+      "hosting_region": "United States",
+      "tenant": "bfsi-bank"
     },
     {
       "id": "t013",
@@ -208,9 +277,14 @@
       "first_connected": "2022-04-01",
       "last_used": "2022-09-30",
       "monthly_active_users": 0,
-      "oauth_scopes": ["Files.ReadWrite.All"],
-      "data_categories_accessed": ["All files (tenant-wide)"],
-      "hosting_region": "Unknown"
+      "oauth_scopes": [
+        "Files.ReadWrite.All"
+      ],
+      "data_categories_accessed": [
+        "All files (tenant-wide)"
+      ],
+      "hosting_region": "Unknown",
+      "tenant": "bfsi-bank"
     },
     {
       "id": "t014",
@@ -227,8 +301,12 @@
         "https://www.googleapis.com/auth/admin.directory.user.readonly",
         "https://www.googleapis.com/auth/drive.file"
       ],
-      "data_categories_accessed": ["Employee bank/salary data", "App-created files only"],
-      "hosting_region": "India"
+      "data_categories_accessed": [
+        "Employee bank/salary data",
+        "App-created files only"
+      ],
+      "hosting_region": "India",
+      "tenant": "bfsi-bank"
     },
     {
       "id": "t015",
@@ -241,9 +319,14 @@
       "first_connected": "2025-12-01",
       "last_used": "2026-08-01",
       "monthly_active_users": 2,
-      "oauth_scopes": ["https://www.googleapis.com/auth/documents.readonly"],
-      "data_categories_accessed": ["Document content (read-only)"],
-      "hosting_region": "European Union"
+      "oauth_scopes": [
+        "https://www.googleapis.com/auth/documents.readonly"
+      ],
+      "data_categories_accessed": [
+        "Document content (read-only)"
+      ],
+      "hosting_region": "European Union",
+      "tenant": "msme-exporter"
     },
     {
       "id": "t016",
@@ -256,9 +339,18 @@
       "first_connected": "2024-01-15",
       "last_used": "2026-08-02",
       "monthly_active_users": 15,
-      "oauth_scopes": ["Contacts.ReadWrite", "Mail.Read", "Files.ReadWrite.All"],
-      "data_categories_accessed": ["Customer PII", "Email content", "All files (tenant-wide)"],
-      "hosting_region": "United States"
+      "oauth_scopes": [
+        "Contacts.ReadWrite",
+        "Mail.Read",
+        "Files.ReadWrite.All"
+      ],
+      "data_categories_accessed": [
+        "Customer PII",
+        "Email content",
+        "All files (tenant-wide)"
+      ],
+      "hosting_region": "United States",
+      "tenant": "msme-exporter"
     },
     {
       "id": "t017",
@@ -271,9 +363,14 @@
       "first_connected": "2025-06-25",
       "last_used": "2026-07-27",
       "monthly_active_users": 30,
-      "oauth_scopes": ["https://www.googleapis.com/auth/drive.file"],
-      "data_categories_accessed": ["App-created files only"],
-      "hosting_region": "India"
+      "oauth_scopes": [
+        "https://www.googleapis.com/auth/drive.file"
+      ],
+      "data_categories_accessed": [
+        "App-created files only"
+      ],
+      "hosting_region": "India",
+      "tenant": "govt-digital"
     },
     {
       "id": "t018",
@@ -286,9 +383,16 @@
       "first_connected": "2021-07-19",
       "last_used": "2021-08-05",
       "monthly_active_users": 0,
-      "oauth_scopes": ["Contacts.Read", "Mail.Read"],
-      "data_categories_accessed": ["Customer PII", "Email content"],
-      "hosting_region": "Unknown"
+      "oauth_scopes": [
+        "Contacts.Read",
+        "Mail.Read"
+      ],
+      "data_categories_accessed": [
+        "Customer PII",
+        "Email content"
+      ],
+      "hosting_region": "Unknown",
+      "tenant": "msme-exporter"
     }
   ]
 }

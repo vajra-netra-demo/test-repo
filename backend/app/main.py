@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
-from app.routers import tools, report, discovery
+from app.routers import tools, report, discovery, tenants
 from app.scheduler import start_scheduler
 
 app = FastAPI(title="NETRA MVP API", version="0.1.0")
@@ -14,6 +14,7 @@ Base.metadata.create_all(bind=engine)
 app.include_router(tools.router)
 app.include_router(report.router)
 app.include_router(discovery.router)
+app.include_router(tenants.router)
 
 
 @app.on_event("startup")

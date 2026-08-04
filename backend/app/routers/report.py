@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 import os
 from pathlib import Path
 
@@ -15,14 +16,33 @@ from app.evidence_report import generate_evidence_report, risk_level
 router = APIRouter(prefix="/report", tags=["report"])
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "output"
+PROFILES_FILE = Path(__file__).resolve().parent.parent.parent.parent / "data" / "customer_profiles.json"
+
+
+def _resolve_tenant_name(tenant_id: str) -> str:
+    """Looks up the real customer-story name for a tenant id, falling back to
+    the generic sample tenant name if unrecognized or not provided."""
+    if not tenant_id:
+        return "Sample Tenant Pvt Ltd"
+    with open(PROFILES_FILE, "r", encoding="utf-8") as f:
+        profiles = json.load(f)["profiles"]
+    match = next((p for p in profiles if p["id"] == tenant_id), None)
+    return match["name"] if match else "Sample Tenant Pvt Ltd"
 
 
 @router.get("/evidence")
-def get_evidence_report(tenant: str = "Sample Tenant Pvt Ltd", db: Session = Depends(get_db)):
-    """Generates a fresh evidence report from current DB state and returns it as a download."""
-    tools = db.query(SaaSTool).filter(SaaSTool.risk_score.isnot(None)).all()
+def get_evidence_report(tenant_id: str = None, db: Session = Depends(get_db)):
+    """Generates a fresh evidence report from current DB state and returns it
+    as a download. Pass tenant_id (e.g. "bfsi-bank") to scope the report to
+    one customer-story profile and use its real name as the report title."""
+    query = db.query(SaaSTool).filter(SaaSTool.risk_score.isnot(None))
+    if tenant_id:
+        query = query.filter(SaaSTool.tenant == tenant_id)
+    tools = query.all()
     if not tools:
-        raise HTTPException(status_code=409, detail="No risk-assessed tools found — run the Day 3 risk assessment first.")
+        raise HTTPException(status_code=409, detail="No risk-assessed tools found for this selection — run the Day 3 risk assessment first.")
+
+    tenant_name = _resolve_tenant_name(tenant_id)
 
     tool_dicts = [{
         "tool_name": t.tool_name,
@@ -38,7 +58,7 @@ def get_evidence_report(tenant: str = "Sample Tenant Pvt Ltd", db: Session = Dep
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     output_path = OUTPUT_DIR / "netra_evidence_report.docx"
-    generate_evidence_report(tenant, tool_dicts, load_clauses(), str(output_path), mode)
+    generate_evidence_report(tenant_name, tool_dicts, load_clauses(), str(output_path), mode)
 
     return FileResponse(
         path=str(output_path),
@@ -48,11 +68,15 @@ def get_evidence_report(tenant: str = "Sample Tenant Pvt Ltd", db: Session = Dep
 
 
 @router.get("/csv")
-def get_csv_export(db: Session = Depends(get_db)):
-    """Exports all discovered tools (assessed or not) as CSV for auditors/Excel."""
-    tools = db.query(SaaSTool).order_by(SaaSTool.tool_name).all()
+def get_csv_export(tenant_id: str = None, db: Session = Depends(get_db)):
+    """Exports all discovered tools (assessed or not) as CSV for auditors/Excel.
+    Pass tenant_id to scope to one customer-story profile."""
+    query = db.query(SaaSTool)
+    if tenant_id:
+        query = query.filter(SaaSTool.tenant == tenant_id)
+    tools = query.order_by(SaaSTool.tool_name).all()
     if not tools:
-        raise HTTPException(status_code=409, detail="No tools found — run seed/live-scan first.")
+        raise HTTPException(status_code=409, detail="No tools found for this selection.")
 
     buffer = io.StringIO()
     writer = csv.writer(buffer)

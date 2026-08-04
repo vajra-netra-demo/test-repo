@@ -31,6 +31,11 @@ class SaaSTool(Base):
     # "sample" (Day 1 fake data) or "live" (real Microsoft Graph scan of the sandbox tenant)
     source = Column(String, nullable=False, default="sample")
 
+    # Fictional customer profile this tool belongs to, for the customer-story
+    # selector (bfsi-bank / msme-exporter / govt-digital). Null for live-scanned
+    # tools — they belong to the real GitHub org, not any fictional customer.
+    tenant = Column(String, nullable=True, index=True)
+
     # Filled in by the Day 3 AI reasoning layer — null until then.
     risk_score = Column(Integer, nullable=True)
     risk_flags = Column(JSON, nullable=True)

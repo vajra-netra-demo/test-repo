@@ -17,6 +17,7 @@ def list_tools(
     department: Optional[str] = None,
     hosting_region: Optional[str] = None,
     source: Optional[str] = None,
+    tenant: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(SaaSTool)
@@ -26,6 +27,8 @@ def list_tools(
         query = query.filter(SaaSTool.hosting_region == hosting_region)
     if source:
         query = query.filter(SaaSTool.source == source)
+    if tenant:
+        query = query.filter(SaaSTool.tenant == tenant)
     return query.order_by(SaaSTool.tool_name).all()
 
 
