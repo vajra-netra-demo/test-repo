@@ -7,6 +7,8 @@ python-docx>=1.2
 requests>=2.32
 anthropic>=0.120
 
-# Postgres driver is NOT installed by default — the app runs on SQLite out of
-# the box (zero setup). Only install requirements-postgres.txt if you switch
-# DATABASE_URL to a postgresql:// URL.
+# Postgres driver — installed by default so switching DATABASE_URL to a
+# postgresql:// URL (e.g. Railway's Postgres addon) works with no extra
+# install step. The app still runs on SQLite out of the box either way;
+# this driver simply sits unused if DATABASE_URL stays sqlite://.
+psycopg[binary]>=3.2
