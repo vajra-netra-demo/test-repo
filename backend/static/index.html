@@ -156,6 +156,27 @@
   .tenant-card .meta { font-size: 11.5px; color: var(--muted); margin: 2px 0 8px; }
   .tenant-card .tagline { font-size: 12.5px; font-style: italic; color: var(--text); margin-bottom: 6px; }
   .tenant-card .story { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+
+  /* ---------- ROI / Exposure Calculator ---------- */
+  .roi-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .roi-input-row label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .roi-input-row input {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
+    width: 120px;
+  }
+  .roi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+  .roi-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .roi-card .roi-num { font-size: 22px; font-weight: 800; }
+  .roi-card .roi-label { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .roi-card.exposure .roi-num { color: var(--high); }
+  .roi-card.benchmark .roi-num { color: var(--med); }
+  .roi-card.premium .roi-num { color: var(--med-dark); }
+  .roi-card.subscription .roi-num { color: var(--accent); }
+  .roi-compare {
+    background: var(--low-bg); border: 1px solid var(--low); border-radius: 10px; padding: 14px 18px;
+    font-size: 14px; color: var(--low-dark); font-weight: 600; margin-bottom: 10px;
+  }
+  .roi-source { font-size: 10.5px; color: var(--muted); line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -235,6 +256,38 @@
       <div class="panel">
         <h3>By Department</h3>
         <div id="deptChart"></div>
+      </div>
+    </div>
+
+    <div class="section-title">ROI &amp; Exposure Calculator</div>
+    <div class="panel">
+      <div class="roi-input-row">
+        <label for="roiEmployees">Organization size:</label>
+        <input type="number" id="roiEmployees" value="500" min="1" step="1">
+        <label>employees</label>
+      </div>
+      <div class="roi-grid">
+        <div class="roi-card exposure">
+          <div class="roi-num">₹250 Cr</div>
+          <div class="roi-label">DPDP Statutory Ceiling</div>
+        </div>
+        <div class="roi-card benchmark">
+          <div class="roi-num">₹25.5 Cr</div>
+          <div class="roi-label">Avg. Breach Cost (India, 2026)</div>
+        </div>
+        <div class="roi-card premium">
+          <div class="roi-num" id="roiPremiumValue">+₹1.79 Cr</div>
+          <div class="roi-label">Shadow-IT/AI Breach Premium</div>
+        </div>
+        <div class="roi-card subscription">
+          <div class="roi-num" id="roiSubscription">—</div>
+          <div class="roi-label">Illustrative NETRA Cost/Year</div>
+        </div>
+      </div>
+      <div class="roi-compare" id="roiCompare"></div>
+      <div class="roi-source">
+        Sources: DPDP Act 2023, Section 8(5) (statutory maximum for security-safeguard failures) · IBM Cost of a Data Breach Report 2026, India findings (average breach cost, and the additional cost specifically when shadow AI/IT contributed to the breach).
+        NETRA subscription cost is an illustrative placeholder pending real pricing input — not a final quote.
       </div>
     </div>
 
@@ -426,6 +479,37 @@
       renderDonut({ High: high, Medium: med, Low: low });
       renderDeptChart(tools);
       renderAccessGraph(tools);
+      renderRoiCalculator(tools, high);
+    }
+
+    const ILLUSTRATIVE_RATE_PER_EMPLOYEE_PER_YEAR = 1200; // Rs. — placeholder pending real pricing (5-Day Plan item #10)
+    const AVG_BREACH_COST_CR = 25.5;   // IBM Cost of a Data Breach Report 2026, India
+    const SHADOW_IT_PREMIUM_CR = 1.79; // IBM report: additional cost when shadow AI/IT contributed to the breach
+
+    function renderRoiCalculator(tools, highRiskCount) {
+      const employeesInput = document.getElementById("roiEmployees");
+      const employees = Math.max(1, parseInt(employeesInput.value, 10) || 500);
+
+      const subscriptionRs = employees * ILLUSTRATIVE_RATE_PER_EMPLOYEE_PER_YEAR;
+      const subscriptionCr = subscriptionRs / 1e7; // convert Rs to Cr (1 Cr = 1e7)
+      document.getElementById("roiSubscription").textContent =
+        subscriptionCr >= 1 ? `₹${subscriptionCr.toFixed(2)} Cr` : `₹${(subscriptionRs / 1e5).toFixed(1)} L`;
+
+      const premiumCard = document.getElementById("roiPremiumValue").closest(".roi-card");
+      if (highRiskCount > 0) {
+        document.getElementById("roiPremiumValue").textContent = `+₹${SHADOW_IT_PREMIUM_CR} Cr`;
+        premiumCard.title = `You currently have ${highRiskCount} high-risk unmonitored tool(s) discovered.`;
+      } else {
+        document.getElementById("roiPremiumValue").textContent = "N/A";
+        premiumCard.title = "No high-risk tools currently discovered in this view.";
+      }
+
+      const exposureCr = AVG_BREACH_COST_CR + (highRiskCount > 0 ? SHADOW_IT_PREMIUM_CR : 0);
+      const ratio = subscriptionCr > 0 ? (exposureCr / subscriptionCr) : 0;
+      const compare = document.getElementById("roiCompare");
+      compare.textContent = highRiskCount > 0
+        ? `A single average breach with shadow-IT involvement (₹${exposureCr.toFixed(2)} Cr) costs roughly ${ratio.toFixed(0)}x this org's illustrative annual NETRA subscription — and this view currently shows ${highRiskCount} high-risk tool(s) that could be exactly that entry point.`
+        : `A single average India data breach (₹${exposureCr.toFixed(2)} Cr) costs roughly ${ratio.toFixed(0)}x this org's illustrative annual NETRA subscription.`;
     }
 
     // Broad data-category buckets, matched by keyword against each tool's
@@ -773,6 +857,7 @@
       currentTenant = e.target.value;
       loadTools();
     });
+    document.getElementById("roiEmployees").addEventListener("input", () => renderRoiCalculator(allTools, allTools.filter(t => riskLevel(t.risk_score) === "High").length));
 
     loadStatus();
     loadTenantProfiles();
