@@ -1,0 +1,74 @@
+{
+  "_meta": {
+    "description": "STARTER/REPRESENTATIVE clause set authored for the hackathon MVP demo. Paraphrased from well-known, publicly documented provisions of Indian data-privacy/security regulation for demo purposes. NOT verified against primary legal text — before any real customer-facing use, have this checked against the actual DPDP Act 2023 text, RBI Cyber Security Framework circulars, and CERT-In Directions 2022.",
+    "action_item": "Someone (HR/PM) should replace this with verified clause citations sourced from official government publications before the pitch, or clearly caveat in the demo that citations are illustrative."
+  },
+  "clauses": [
+    {
+      "id": "DPDP-MIN",
+      "framework": "DPDP Act 2023",
+      "topic": "Data minimization",
+      "summary": "A Data Fiduciary should only process personal data for the specific purpose consented to, and should not retain broader access than that purpose requires."
+    },
+    {
+      "id": "DPDP-XBORDER",
+      "framework": "DPDP Act 2023",
+      "topic": "Cross-border data transfer",
+      "summary": "Personal data transferred to or processed by entities outside India may be subject to government-notified restrictions; organizations are expected to know where their data is processed and by whom."
+    },
+    {
+      "id": "DPDP-PROCESSOR",
+      "framework": "DPDP Act 2023",
+      "topic": "Data Processor accountability",
+      "summary": "Any third-party service that processes personal data on a company's behalf is a Data Processor, and the company (as Data Fiduciary) remains accountable for that processor's handling of the data."
+    },
+    {
+      "id": "DPDP-BREACH",
+      "framework": "DPDP Act 2023",
+      "topic": "Breach notification",
+      "summary": "Personal data breaches must be reported to the Data Protection Board and affected individuals without undue delay."
+    },
+    {
+      "id": "RBI-ACCESS-REVIEW",
+      "framework": "RBI Cyber Security Framework",
+      "topic": "Periodic access review",
+      "summary": "Regulated entities are expected to periodically review third-party and vendor access, and de-provision access that is no longer in active use."
+    },
+    {
+      "id": "CERTIN-INCIDENT",
+      "framework": "CERT-In Directions, 2022",
+      "topic": "Incident reporting timeline",
+      "summary": "Certain classes of cybersecurity incidents must be reported to CERT-In within a fixed short window (commonly cited as 6 hours) of being noticed."
+    },
+    {
+      "id": "SEC-LEAST-PRIV",
+      "framework": "General security best practice",
+      "topic": "Least privilege",
+      "summary": "Access grants should be scoped to the minimum permission level needed, and should be revoked when a tool becomes dormant or is no longer needed for its original purpose."
+    },
+    {
+      "id": "SEBI-VENDOR-RISK",
+      "framework": "SEBI CSCRF (2024)",
+      "topic": "Third-party/vendor risk assessment",
+      "summary": "SEBI-regulated entities (exchanges, depositories, brokers, mutual funds, KYC agencies) must assess third-party and vendor risk as part of their cybersecurity compliance framework, tiered by entity size."
+    },
+    {
+      "id": "SEBI-SBOM",
+      "framework": "SEBI CSCRF (2024)",
+      "topic": "Software Bill of Materials",
+      "summary": "Critical systems must maintain a Software Bill of Materials — a documented inventory of exactly what software/components are running and where they came from."
+    },
+    {
+      "id": "IRDAI-VENDOR-RISK",
+      "framework": "IRDAI Cyber Security Guidelines",
+      "topic": "Third-party/vendor risk management",
+      "summary": "Insurers and intermediaries must manage third-party and vendor risk under a board-approved cybersecurity policy, with regular VAPT."
+    },
+    {
+      "id": "IRDAI-LOCALIZATION",
+      "framework": "IRDAI Cyber Security Guidelines",
+      "topic": "Policyholder data localization",
+      "summary": "Policyholder data must be stored in compliance with IRDAI's localization requirements; incidents involving this data must be reported to IRDAI within a defined timeline."
+    }
+  ]
+}

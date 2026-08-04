@@ -5,7 +5,7 @@ from fastapi import APIRouter
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
-PROFILES_FILE = Path(__file__).resolve().parent.parent.parent.parent / "data" / "customer_profiles.json"
+PROFILES_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "customer_profiles.json"
 
 
 @router.get("")

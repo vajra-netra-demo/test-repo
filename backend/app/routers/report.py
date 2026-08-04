@@ -16,7 +16,7 @@ from app.evidence_report import generate_evidence_report, risk_level
 router = APIRouter(prefix="/report", tags=["report"])
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "output"
-PROFILES_FILE = Path(__file__).resolve().parent.parent.parent.parent / "data" / "customer_profiles.json"
+PROFILES_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "customer_profiles.json"
 
 
 def _resolve_tenant_name(tenant_id: str) -> str:

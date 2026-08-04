@@ -1,4 +1,4 @@
-"""Loads netra-mvp/data/sample_saas_tools.json into the database.
+"""Loads backend/data/sample_saas_tools.json into the database.
 
 Run with:  python -m app.seed
 Safe to re-run — clears and reloads the table each time.
@@ -10,7 +10,7 @@ from pathlib import Path
 from app.database import Base, SessionLocal, engine
 from app.models import SaaSTool
 
-DATA_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "sample_saas_tools.json"
+DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "sample_saas_tools.json"
 
 
 def seed():

@@ -17,7 +17,7 @@ import os
 from datetime import datetime, date
 from pathlib import Path
 
-CLAUSES_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "regulatory_clauses.json"
+CLAUSES_FILE = Path(__file__).resolve().parent.parent / "data" / "regulatory_clauses.json"
 
 BROAD_SCOPE_MARKERS = [
     "readwrite.all", "mail.send", "auth/drive\"", "gmail.modify",
