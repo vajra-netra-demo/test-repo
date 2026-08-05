@@ -9,6 +9,7 @@ from app.models import SaaSTool
 from app.schemas import SaaSToolOut, RemediateRequest
 from app.github_discovery import revoke_installation, is_configured as github_configured
 from app.snapshot import record_snapshot
+from app.attack_mapping import map_flags_to_techniques
 
 router = APIRouter(prefix="/tools", tags=["tools"], dependencies=[Depends(get_current_user)])
 
@@ -39,6 +40,23 @@ def get_tool(tool_id: str, db: Session = Depends(get_db)):
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool '{tool_id}' not found")
     return tool
+
+
+@router.get("/{tool_id}/attack-mapping")
+def get_attack_mapping(tool_id: str, db: Session = Depends(get_db)):
+    """Real, deterministic rule-mapping (app/attack_mapping.py) from this
+    tool's actual risk_flags to MITRE ATT&CK technique IDs — a lookup, not
+    a simulated attack. See attack_mapping.py's module docstring for why
+    this stays deliberately narrow rather than a full attack-sim engine."""
+    tool = db.query(SaaSTool).filter(SaaSTool.id == tool_id).first()
+    if not tool:
+        raise HTTPException(status_code=404, detail=f"Tool '{tool_id}' not found")
+    return {
+        "tool_id": tool.id,
+        "tool_name": tool.tool_name,
+        "risk_flags": tool.risk_flags or [],
+        "techniques": map_flags_to_techniques(tool.risk_flags),
+    }
 
 
 @router.patch("/{tool_id}/remediate", response_model=SaaSToolOut, dependencies=[Depends(require_admin)])

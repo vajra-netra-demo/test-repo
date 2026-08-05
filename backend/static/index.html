@@ -130,6 +130,24 @@
   .triage-badge.ignore { background: #eef1f4; color: var(--muted); }
   .triage-note { background: var(--accent-light); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 12.5px; color: var(--accent-dark); }
 
+  /* ---------- Graph insights (real NetworkX metrics) ---------- */
+  .graph-insights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 14px; }
+  .graph-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .graph-stat .num { font-size: 22px; font-weight: 800; color: var(--accent-dark); }
+  .graph-stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .centrality-list { list-style: none; padding: 0; margin: 6px 0 0; }
+  .centrality-list li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--border); font-size: 12.5px; }
+  .centrality-list li:last-child { border-bottom: none; }
+  .centrality-list .score { color: var(--accent-dark); font-weight: 700; }
+  .graph-insights-note { font-size: 11px; color: var(--muted); margin-top: 10px; }
+
+  /* ---------- ATT&CK detection mapping ---------- */
+  .attack-mapping-section { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .technique-chip { display: inline-block; background: #fff1f1; border: 1px solid #f3caca; border-radius: 6px; padding: 6px 10px; margin: 3px 6px 3px 0; font-size: 11.5px; max-width: 100%; }
+  .technique-chip .tid { font-weight: 800; color: #a33; margin-right: 6px; }
+  .technique-chip .tname { font-weight: 600; }
+  .technique-chip .rationale { display: block; color: var(--muted); margin-top: 3px; font-size: 11px; }
+
   /* ---------- Toasts (non-blocking, for live-demo polish) ---------- */
   #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
 
@@ -363,6 +381,23 @@
     <div class="panel">
       <h3>Which kinds of data flow into which risk level (line thickness = number of tools)</h3>
       <svg id="accessGraph" width="100%" height="380" viewBox="0 0 640 380" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div class="section-title">Graph Insights — Real Computed Metrics</div>
+    <div class="panel">
+      <h3>Department &harr; Tool &harr; Data-Category graph, analyzed in-process with NetworkX (degree/betweenness centrality, connected components) — not illustrative counts</h3>
+      <div class="graph-insights-grid" id="graphInsightsStats"></div>
+      <div class="graph-insights-grid" style="margin-top:16px;">
+        <div>
+          <strong>Most central tools</strong> <span style="color:var(--muted); font-size:11px;">(touch the most departments + data categories)</span>
+          <ul class="centrality-list" id="centralToolsList"></ul>
+        </div>
+        <div>
+          <strong>Bridge tools</strong> <span style="color:var(--muted); font-size:11px;">(sit on the most shortest-paths between other nodes)</span>
+          <ul class="centrality-list" id="bridgeToolsList"></ul>
+        </div>
+      </div>
+      <div class="graph-insights-note">Recomputed fresh from current data on every load — an in-process NetworkX graph, not a deployed graph database.</div>
     </div>
 
     <div class="section-title">Discovered Tools</div>
@@ -1282,10 +1317,17 @@
               ${t.remediated ? "✓ Remediated — click to undo" : "Mark as Remediated"}
             </button>
             ${isGithubLive ? `<button class="remediate-btn autofix-btn" data-id="${t.id}" data-name="${t.tool_name}" style="background:var(--high-bg); color:var(--high-dark); border-color:var(--high); margin-left:8px;">&#9888; Auto-Revoke Access on GitHub</button>` : ""}
+            ${(t.risk_flags || []).length ? `<div class="attack-mapping-section"><strong>MITRE ATT&amp;CK mapping</strong> <span style="color:var(--muted); font-size:11px;">(real rule-mapping from this finding's flags — see Section 9 of the handover doc)</span><div class="attack-mapping-body" id="attackMap-${t.id}" style="margin-top:6px; color:var(--muted); font-size:11.5px;">Loading…</div></div>` : ""}
           </td>
         `;
+        let attackMapLoaded = false;
         row.addEventListener("click", () => {
-          detailRow.style.display = detailRow.style.display === "none" ? "table-row" : "none";
+          const opening = detailRow.style.display === "none";
+          detailRow.style.display = opening ? "table-row" : "none";
+          if (opening && !attackMapLoaded && (t.risk_flags || []).length) {
+            attackMapLoaded = true;
+            loadAttackMapping(t.id);
+          }
         });
         detailRow.querySelector(".remediate-btn").addEventListener("click", async (e) => {
           e.stopPropagation();
@@ -1412,6 +1454,7 @@
     document.getElementById("tenantSelect").addEventListener("change", (e) => {
       currentTenant = e.target.value;
       loadTools();
+      loadGraphInsights();
     });
     document.getElementById("roiEmployees").addEventListener("input", () => renderRoiCalculator(allTools, allTools.filter(t => riskLevel(t.risk_score) === "High").length));
     document.getElementById("classifyBtn").addEventListener("click", runClassify);
@@ -1427,6 +1470,52 @@
       loadStatus();
       loadTenantProfiles();
       loadTools();
+      loadGraphInsights();
+    }
+
+    async function loadGraphInsights() {
+      try {
+        const q = currentTenant ? `?tenant=${encodeURIComponent(currentTenant)}` : "";
+        const res = await fetch(apiUrl(`/discovery/access-graph-insights${q}`));
+        if (!res.ok) return;
+        const g = await res.json();
+
+        document.getElementById("graphInsightsStats").innerHTML = `
+          <div class="graph-stat"><div class="num">${g.node_count}</div><div class="lbl">Graph nodes</div></div>
+          <div class="graph-stat"><div class="num">${g.edge_count}</div><div class="lbl">Graph edges</div></div>
+          <div class="graph-stat"><div class="num">${g.connected_components}</div><div class="lbl">Connected components</div></div>
+          <div class="graph-stat"><div class="num">${g.largest_component_size ?? 0}</div><div class="lbl">Largest component size</div></div>
+        `;
+
+        const renderList = (elId, items) => {
+          const el = document.getElementById(elId);
+          el.innerHTML = items.length
+            ? items.map(i => `<li><span>${i.tool_name}${i.risk_score !== null && i.risk_score !== undefined ? ` <span class="badge ${riskLevel(i.risk_score)}" style="margin-left:4px;">${i.risk_score}</span>` : ""}</span><span class="score">${i.score}</span></li>`).join("")
+            : `<li style="color:var(--muted);">No data yet.</li>`;
+        };
+        renderList("centralToolsList", g.most_central_tools || []);
+        renderList("bridgeToolsList", g.bridge_tools || []);
+      } catch (e) {
+        // Non-critical panel — fail silently rather than disrupt the rest of the dashboard.
+      }
+    }
+
+    async function loadAttackMapping(toolId) {
+      const el = document.getElementById(`attackMap-${toolId}`);
+      if (!el) return;
+      try {
+        const res = await fetch(apiUrl(`/tools/${encodeURIComponent(toolId)}/attack-mapping`));
+        if (!res.ok) { el.textContent = "Mapping unavailable."; return; }
+        const data = await res.json();
+        el.innerHTML = (data.techniques || []).map(tech => `
+          <div class="technique-chip">
+            <span class="tid">${tech.technique_id}</span><span class="tname">${tech.technique_name}</span> — ${tech.tactic}
+            <span class="rationale">${tech.rationale}</span>
+          </div>
+        `).join("") || "No techniques matched.";
+      } catch (e) {
+        el.textContent = "Mapping unavailable.";
+      }
     }
 
     if (authToken) {

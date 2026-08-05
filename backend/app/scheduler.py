@@ -3,6 +3,15 @@ so the dashboard reflects "continuous monitoring," not a one-time snapshot.
 Runs as a daemon thread inside the same process as the API server; no
 external job queue or cron needed for the demo.
 
+Deliberately not Celery: a distributed task queue needs a broker (Redis or
+RabbitMQ) deployed and kept healthy alongside this service, plus worker
+process management — real new infrastructure and a real new failure mode,
+for a workload (one recurring job, one process) that a daemon thread
+already handles reliably. Celery would earn its cost if this ever needed
+multiple worker processes, retries across machines, or task routing; at
+this project's scale it would be complexity with no user-visible payoff,
+and a real risk of destabilizing a working, demo-proven system.
+
 Set SCAN_INTERVAL_SECONDS=0 in .env to disable.
 """
 

@@ -7,6 +7,15 @@ detection needs tokenization, not deep NLP).
 
 Lazily initialized — the spaCy model load is real disk/CPU work, so it
 happens once on first use, not at import time / app startup.
+
+Deliberately not a custom-trained NER model: training one needs labeled
+Indian-identifier training data and training time neither of which exist
+for a hackathon build. Presidio's pattern recognizers (indian_recognizers.py)
+plus real checksum validation (Verhoeff for Aadhaar, mod-36 for GSTIN) cover
+the actual, practical need — deterministic detection of structured
+identifiers — without needing a trained model at all. A custom NER model
+would only earn its cost for unstructured/free-text PII detection beyond
+what regex+checksums already catch correctly.
 """
 
 from functools import lru_cache

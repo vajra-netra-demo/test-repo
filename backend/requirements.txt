@@ -32,3 +32,10 @@ pyjwt>=2.9
 presidio-analyzer==2.2.364
 spacy==3.8.13
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
+# In-process access-graph analysis (app/graph_analysis.py) — real degree/
+# betweenness centrality and connected-components over the department/tool/
+# data-category graph. Pure Python, no native extension, no separate
+# database service — deliberately NOT Neo4j (see app/graph_analysis.py for
+# why a deployed graph DB isn't worth the infra risk this close to a deadline).
+networkx>=3.2
