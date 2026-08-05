@@ -7,13 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.llm_provider import is_configured as llm_configured, PROVIDER, PROVIDER_REGION
 from app.models import SaaSTool, ScanSnapshot
 from app.risk_engine import load_clauses
 from app.evidence_report import generate_evidence_report, risk_level
 
-router = APIRouter(prefix="/report", tags=["report"])
+router = APIRouter(prefix="/report", tags=["report"], dependencies=[Depends(get_current_user)])
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "output"
 PROFILES_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "customer_profiles.json"

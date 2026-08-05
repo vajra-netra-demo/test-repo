@@ -2,11 +2,12 @@
 terms and get different, differently-ranked clauses back — the same
 "prove it's not static" bar used to verify the LLM itself isn't mocked."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.auth import get_current_user
 from app.rag.retriever import retrieve
 
-router = APIRouter(prefix="/regulation", tags=["regulation"])
+router = APIRouter(prefix="/regulation", tags=["regulation"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/search")

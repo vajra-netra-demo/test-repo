@@ -72,6 +72,29 @@ class EndpointDeviceOut(BaseModel):
     agent_version: Optional[str] = None
 
 
+class EmployeeSummary(BaseModel):
+    employee: str
+    department: Optional[str] = None
+    device_count: int
+    tool_count: int
+    high_risk_count: int
+    offboarded: bool = False
+    offboarded_date: Optional[str] = None
+
+
+class EmployeeProfile(BaseModel):
+    employee: str
+    devices: List[EndpointDeviceOut]
+    tools: List[SaaSToolOut]
+    offboarded: bool = False
+    offboarded_date: Optional[str] = None
+    offboard_note: Optional[str] = None
+
+
+class OffboardRequest(BaseModel):
+    note: Optional[str] = None
+
+
 class ClassifyTextRequest(BaseModel):
     text: str
     label: Optional[str] = None

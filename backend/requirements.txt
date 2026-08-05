@@ -17,3 +17,8 @@ psycopg[binary]>=3.2
 # small pure-wheel install, safe to bundle by default. /regulation/search
 # has no ImportError fallback, unlike risk_engine.py's internal RAG call.
 scikit-learn>=1.4
+
+# Login/RBAC (app/auth.py) — pure Python, no native extension, deliberately
+# chosen over python-jose/passlib to avoid the native-dependency deploy
+# friction seen elsewhere in this project.
+pyjwt>=2.9

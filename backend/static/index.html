@@ -132,6 +132,29 @@
 
   /* ---------- Toasts (non-blocking, for live-demo polish) ---------- */
   #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+
+  /* ---------- Login overlay ---------- */
+  .login-overlay {
+    display: none; position: fixed; inset: 0; background: var(--sidebar);
+    align-items: center; justify-content: center; z-index: 2000;
+  }
+  .login-box {
+    background: white; border-radius: 14px; padding: 36px 32px; width: 320px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center;
+  }
+  .login-logo { font-size: 26px; font-weight: 800; color: var(--sidebar); letter-spacing: .04em; }
+  .login-sub { color: var(--muted); font-size: 13px; margin: 6px 0 22px; }
+  .login-input {
+    width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; margin-bottom: 12px; box-sizing: border-box;
+  }
+  .login-submit {
+    width: 100%; background: var(--accent); color: white; border: none; border-radius: 8px;
+    padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px;
+  }
+  .login-submit:hover { background: var(--accent-dark); }
+  .login-submit:disabled { background: #c2c9d6; cursor: not-allowed; }
+  .login-error { color: var(--high-dark); background: var(--high-bg); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; margin-top: 12px; }
   .toast {
     background: white; border: 1px solid var(--border); border-left: 4px solid var(--accent);
     border-radius: 8px; padding: 12px 16px; font-size: 13px; max-width: 360px;
@@ -214,10 +237,25 @@
     <div class="nav">
       <div class="nav-item active" data-view="dashboard"><span class="nav-icon">&#9632;</span> Dashboard</div>
       <div class="nav-item" data-view="endpoints"><span class="nav-icon">&#9632;</span> Endpoint Devices</div>
+      <div class="nav-item" data-view="employees"><span class="nav-icon">&#9632;</span> Employees</div>
       <div class="nav-item" data-view="classify"><span class="nav-icon">&#9632;</span> Classify Text</div>
       <div class="nav-item" data-view="regulation"><span class="nav-icon">&#9632;</span> Regulation Search</div>
     </div>
-    <div class="sidebar-footer">Team Vajra<br>Swaraj CloudForge Hackathon 2026</div>
+    <div class="sidebar-footer">
+      Team Vajra<br>Swaraj CloudForge Hackathon 2026
+      <button id="logoutBtn" style="display:none; margin-top:10px; width:100%; background:transparent; border:1px solid #384874; color:#b7c3de; padding:6px; font-size:11px; border-radius:6px; cursor:pointer;">Sign Out</button>
+    </div>
+  </div>
+
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+      <div class="login-logo">NETRA</div>
+      <p class="login-sub">Sign in to continue</p>
+      <input type="text" id="loginUsername" class="login-input" placeholder="Username" autocomplete="username">
+      <input type="password" id="loginPassword" class="login-input" placeholder="Password" autocomplete="current-password">
+      <button id="loginBtn" class="login-submit">Sign In</button>
+      <div id="loginError" class="login-error" style="display:none;"></div>
+    </div>
   </div>
 
   <div class="main">
@@ -372,6 +410,35 @@
     </div>
   </div>
 
+  <div id="view-employees" class="view">
+    <div class="topbar">
+      <div>
+        <h1>Employees</h1>
+        <p class="subtitle">Per-employee drill-down, derived from endpoint-agent check-ins — click a row to see everything discovered on that person's device(s), and mark them offboarded if they've departed</p>
+      </div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead>
+          <tr><th>Employee</th><th>Department</th><th>Devices</th><th>Tools Found</th><th>High Risk</th><th>Status</th></tr>
+        </thead>
+        <tbody id="employeesBody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div id="employeeDetailWrap" style="display:none;">
+      <div class="section-title">Employee Profile — <span id="employeeDetailName"></span></div>
+      <div class="panel" id="employeeDevicesPanel"></div>
+      <div class="section-title">Tools &amp; Findings on Their Device(s)</div>
+      <table>
+        <thead>
+          <tr><th>Tool</th><th>Risk</th><th>Score</th><th>Flags</th><th>Triage Agent</th></tr>
+        </thead>
+        <tbody id="employeeToolsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div id="view-classify" class="view">
     <div class="topbar">
       <div>
@@ -428,6 +495,83 @@
       || window.location.origin === NETRA_BACKEND_URL;
     const API_BASE = _sameOrigin ? "" : NETRA_BACKEND_URL;
     function apiUrl(path) { return API_BASE + path; }
+
+    // ---------- Auth (login/RBAC) ----------
+    // Every route except /auth/login requires a JWT now. Rather than thread
+    // an Authorization header through 20+ call sites, wrap the one thing
+    // they all go through: window.fetch itself. Any 401 response bounces
+    // back to the login screen and clears the stale token.
+    let authToken = localStorage.getItem("netra_token");
+    let authRole = localStorage.getItem("netra_role") || "";
+    const _origFetch = window.fetch.bind(window);
+    window.fetch = async function(input, init = {}) {
+      const headers = new Headers(init.headers || {});
+      if (authToken && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${authToken}`);
+      }
+      const res = await _origFetch(input, { ...init, headers });
+      if (res.status === 401) {
+        authToken = null;
+        localStorage.removeItem("netra_token");
+        localStorage.removeItem("netra_role");
+        showLoginScreen();
+      }
+      return res;
+    };
+
+    function showLoginScreen() {
+      document.getElementById("loginOverlay").style.display = "flex";
+    }
+    function hideLoginScreen() {
+      document.getElementById("loginOverlay").style.display = "none";
+    }
+
+    async function doLogin() {
+      const username = document.getElementById("loginUsername").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      const errEl = document.getElementById("loginError");
+      const btn = document.getElementById("loginBtn");
+      errEl.style.display = "none";
+      if (!username || !password) {
+        errEl.textContent = "Enter both username and password.";
+        errEl.style.display = "block";
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Signing in…";
+      try {
+        const res = await fetch(apiUrl("/auth/login"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.detail || "Login failed.";
+          errEl.style.display = "block";
+          return;
+        }
+        authToken = data.access_token;
+        authRole = data.role;
+        localStorage.setItem("netra_token", authToken);
+        localStorage.setItem("netra_role", authRole);
+        hideLoginScreen();
+        initApp();
+      } catch (e) {
+        errEl.textContent = "Request failed: " + e;
+        errEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign In";
+      }
+    }
+
+    function doLogout() {
+      authToken = null;
+      localStorage.removeItem("netra_token");
+      localStorage.removeItem("netra_role");
+      showLoginScreen();
+    }
 
     let currentFilter = "all";
     let searchTerm = "";
@@ -500,6 +644,7 @@
         document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
         document.getElementById(`view-${item.dataset.view}`).classList.add("active");
         if (item.dataset.view === "endpoints") loadEndpoints();
+        if (item.dataset.view === "employees") loadEmployees();
         if (item.dataset.view === "classify") loadClassifyHistory();
       });
     });
@@ -540,6 +685,99 @@
           </tr>`).join("");
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="8" class="empty">Could not reach API.</td></tr>`;
+      }
+    }
+
+    // ---------- Employees (per-employee drill-down + offboarding) ----------
+    async function loadEmployees() {
+      const tbody = document.getElementById("employeesBody");
+      document.getElementById("employeeDetailWrap").style.display = "none";
+      try {
+        const res = await fetch(apiUrl("/discovery/employees"));
+        const employees = await res.json();
+        if (employees.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="empty">No employees found yet — run agent/netra_agent.py on a machine to enroll it.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = employees.map(e => `
+          <tr class="tool-row" data-employee="${e.employee}">
+            <td>${e.employee}</td>
+            <td>${e.department || "—"}</td>
+            <td>${e.device_count}</td>
+            <td>${e.tool_count}</td>
+            <td>${e.high_risk_count > 0 ? `<span class="badge High">${e.high_risk_count}</span>` : "0"}</td>
+            <td>${e.offboarded ? `<span class="remediated-tag" style="background:var(--high-bg); color:var(--high-dark);">Offboarded ${e.offboarded_date ? e.offboarded_date.slice(0, 10) : ""}</span>` : "Active"}</td>
+          </tr>`).join("");
+        tbody.querySelectorAll("tr[data-employee]").forEach(row => {
+          row.addEventListener("click", () => loadEmployeeProfile(row.dataset.employee));
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Could not reach API.</td></tr>`;
+      }
+    }
+
+    async function loadEmployeeProfile(employee) {
+      const wrap = document.getElementById("employeeDetailWrap");
+      const devicesPanel = document.getElementById("employeeDevicesPanel");
+      const toolsBody = document.getElementById("employeeToolsBody");
+      document.getElementById("employeeDetailName").textContent = employee;
+      wrap.style.display = "block";
+      devicesPanel.innerHTML = "Loading…";
+      toolsBody.innerHTML = "";
+      try {
+        const res = await fetch(apiUrl(`/discovery/employees/${encodeURIComponent(employee)}/profile`));
+        const profile = await res.json();
+
+        devicesPanel.innerHTML = `
+          <div><strong>Devices:</strong> ${profile.devices.map(d => `${d.hostname} (${d.os}, last check-in ${d.last_checkin})`).join(", ")}</div>
+          ${profile.offboarded ? `
+            <div class="config-note" style="margin-top:10px;">Marked offboarded on ${(profile.offboarded_date || "").slice(0, 10)}${profile.offboard_note ? " — " + profile.offboard_note : ""}. All their tools below have been flagged for access-revocation review.</div>
+            <button class="remediate-btn" id="undoOffboardBtn" style="margin-top:8px;">Undo Offboard</button>
+          ` : `
+            <button class="remediate-btn" id="offboardBtn" style="margin-top:12px; background:var(--high-bg); color:var(--high-dark); border-color:var(--high);">&#9888; Mark as Offboarded — Flag Access for Review</button>
+          `}
+        `;
+
+        toolsBody.innerHTML = profile.tools.map(t => {
+          const level = riskLevel(t.risk_score);
+          return `
+            <tr>
+              <td>${t.tool_name}</td>
+              <td>${level ? `<span class="badge ${level}">${level}</span>` : "—"}</td>
+              <td>${t.risk_score ?? "—"}</td>
+              <td>${(t.risk_flags || []).map(f => `<span class="flag-chip">${f}</span>`).join("") || "—"}</td>
+              <td>${t.triage_decision ? `<span class="triage-badge ${t.triage_decision}">${t.triage_decision}</span>` : "—"}</td>
+            </tr>`;
+        }).join("") || `<tr><td colspan="5" class="empty">No tools found on this employee's device(s).</td></tr>`;
+
+        const offboardBtn = document.getElementById("offboardBtn");
+        if (offboardBtn) {
+          offboardBtn.addEventListener("click", async () => {
+            const confirmed = confirm(`Mark "${employee}" as offboarded? This flags every tool found on their device(s) as High risk, pending manual access revocation. This does not auto-revoke anything.`);
+            if (!confirmed) return;
+            offboardBtn.disabled = true;
+            await fetch(apiUrl(`/discovery/employees/${encodeURIComponent(employee)}/offboard`), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ note: null }),
+            });
+            showToast(`${employee} marked offboarded — their tools are now flagged for review.`, "success");
+            await loadEmployeeProfile(employee);
+            await loadEmployees();
+          });
+        }
+        const undoBtn = document.getElementById("undoOffboardBtn");
+        if (undoBtn) {
+          undoBtn.addEventListener("click", async () => {
+            undoBtn.disabled = true;
+            await fetch(apiUrl(`/discovery/employees/${encodeURIComponent(employee)}/offboard`), { method: "DELETE" });
+            showToast(`${employee}'s offboarded status undone.`, "success");
+            await loadEmployeeProfile(employee);
+            await loadEmployees();
+          });
+        }
+      } catch (e) {
+        devicesPanel.innerHTML = `<div class="config-note">Could not reach API.</div>`;
       }
     }
 
@@ -692,14 +930,39 @@
       check();
     }
 
+    // window.location.href can't carry an Authorization header, and every
+    // API call now requires one — fetch as a blob and trigger the download
+    // via a synthetic link instead.
+    async function _downloadViaFetch(url, filename) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          showToast("Download failed: " + (data.detail || res.statusText), "error");
+          return;
+        }
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
+      } catch (e) {
+        showToast("Download request failed: " + e, "error");
+      }
+    }
+
     function downloadReport() {
       const q = currentTenant ? `?tenant_id=${encodeURIComponent(currentTenant)}` : "";
-      window.location.href = apiUrl(`/report/evidence${q}`);
+      _downloadViaFetch(apiUrl(`/report/evidence${q}`), "netra_evidence_report.docx");
     }
 
     function downloadCsv() {
       const q = currentTenant ? `?tenant_id=${encodeURIComponent(currentTenant)}` : "";
-      window.location.href = apiUrl(`/report/csv${q}`);
+      _downloadViaFetch(apiUrl(`/report/csv${q}`), "netra_discovered_tools.csv");
     }
 
     async function loadTenantProfiles() {
@@ -1155,9 +1418,22 @@
     document.getElementById("regSearchBtn").addEventListener("click", runRegulationSearch);
     document.getElementById("regQuery").addEventListener("keydown", (e) => { if (e.key === "Enter") runRegulationSearch(); });
 
-    loadStatus();
-    loadTenantProfiles();
-    loadTools();
+    document.getElementById("loginBtn").addEventListener("click", doLogin);
+    document.getElementById("loginPassword").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+    document.getElementById("logoutBtn").addEventListener("click", doLogout);
+
+    function initApp() {
+      document.getElementById("logoutBtn").style.display = "block";
+      loadStatus();
+      loadTenantProfiles();
+      loadTools();
+    }
+
+    if (authToken) {
+      initApp();
+    } else {
+      showLoginScreen();
+    }
   </script>
 </body>
 </html>

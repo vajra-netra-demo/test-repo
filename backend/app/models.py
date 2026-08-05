@@ -3,6 +3,20 @@ from sqlalchemy import Column, String, Integer, JSON, Text, Boolean
 from app.database import Base
 
 
+class User(Base):
+    """Login accounts (app/auth.py). Two roles: "admin" (can trigger scans,
+    remediate/auto-fix, offboard employees) and "viewer" (read-only). No
+    self-registration — accounts are created directly (see app/auth.py's
+    startup bootstrap of ADMIN_USERNAME/ADMIN_PASSWORD, or added to the DB
+    by an admin)."""
+
+    __tablename__ = "users"
+
+    username = Column(String, primary_key=True)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="viewer")  # "admin" | "viewer"
+
+
 class SaaSTool(Base):
     """A discovered SaaS/AI tool and its access footprint.
 
@@ -78,6 +92,21 @@ class EndpointDevice(Base):
     first_checkin = Column(String, nullable=False)
     last_checkin = Column(String, nullable=False)
     agent_version = Column(String, nullable=True)
+
+
+class OffboardedEmployee(Base):
+    """Marks an employee (matched by the free-text name reported by the
+    endpoint agent, see EndpointDevice.employee) as departed, so their
+    endpoint-discovered tool access can be flagged for review. There's no
+    real HR/directory integration behind this — it's a manual admin action,
+    consistent with the rest of the product never auto-executing anything
+    a human hasn't confirmed."""
+
+    __tablename__ = "offboarded_employees"
+
+    employee = Column(String, primary_key=True)
+    offboarded_date = Column(String, nullable=False)
+    note = Column(String, nullable=True)
 
 
 class ClassificationScan(Base):

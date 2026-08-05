@@ -5,8 +5,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.database import Base, engine
-from app.routers import tools, report, discovery, tenants, endpoint, regulation
+from app.auth import bootstrap_admin_user
+from app.config import ADMIN_PASSWORD, ADMIN_USERNAME
+from app.database import Base, SessionLocal, engine
+from app.routers import auth, tools, report, discovery, tenants, endpoint, regulation
 from app.scheduler import start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -14,10 +16,10 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="NETRA MVP API", version="0.1.0")
 
 # Allows the dashboard (static/index.html) to be hosted separately (e.g. on
-# Vercel) from this API (Railway) and still call it cross-origin. No
-# cookie-based auth exists to protect here — there's no login/RBAC at all
-# yet — so a wide-open CORS policy doesn't weaken anything that isn't
-# already this open.
+# Vercel) from this API (Railway) and still call it cross-origin. JWT auth
+# (app/auth.py) is carried in an Authorization header, not a cookie, so a
+# wide-open CORS policy doesn't expose session state the way it would for
+# cookie-based auth.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,6 +29,7 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
+app.include_router(auth.router)
 app.include_router(tools.router)
 app.include_router(report.router)
 app.include_router(discovery.router)
@@ -47,6 +50,11 @@ except ImportError as exc:
 
 @app.on_event("startup")
 def _on_startup():
+    db = SessionLocal()
+    try:
+        bootstrap_admin_user(db, ADMIN_USERNAME, ADMIN_PASSWORD)
+    finally:
+        db.close()
     start_scheduler()
 
 

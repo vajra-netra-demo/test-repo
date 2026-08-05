@@ -3,13 +3,14 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user, require_admin
 from app.database import get_db
 from app.models import SaaSTool
 from app.schemas import SaaSToolOut, RemediateRequest
 from app.github_discovery import revoke_installation, is_configured as github_configured
 from app.snapshot import record_snapshot
 
-router = APIRouter(prefix="/tools", tags=["tools"])
+router = APIRouter(prefix="/tools", tags=["tools"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=List[SaaSToolOut])
@@ -40,7 +41,7 @@ def get_tool(tool_id: str, db: Session = Depends(get_db)):
     return tool
 
 
-@router.patch("/{tool_id}/remediate", response_model=SaaSToolOut)
+@router.patch("/{tool_id}/remediate", response_model=SaaSToolOut, dependencies=[Depends(require_admin)])
 def set_remediated(tool_id: str, body: RemediateRequest, db: Session = Depends(get_db)):
     tool = db.query(SaaSTool).filter(SaaSTool.id == tool_id).first()
     if not tool:
@@ -51,7 +52,7 @@ def set_remediated(tool_id: str, body: RemediateRequest, db: Session = Depends(g
     return tool
 
 
-@router.post("/{tool_id}/auto-fix")
+@router.post("/{tool_id}/auto-fix", dependencies=[Depends(require_admin)])
 def auto_fix_tool(tool_id: str, db: Session = Depends(get_db)):
     """Real, irreversible action: actually revokes a GitHub App's access on
     the live org via the GitHub API. Only supported for GitHub-sourced live

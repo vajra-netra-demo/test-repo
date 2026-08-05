@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth import get_current_user, require_admin
 from app.discovery_provider import is_configured, active_provider
 from app.manual_scan import start_manual_scan, get_manual_scan_status
 from app.scheduler import get_scheduler_status
 from app.siem.sentinel_connector import is_configured as sentinel_is_configured
 
-router = APIRouter(prefix="/discovery", tags=["discovery"])
+router = APIRouter(prefix="/discovery", tags=["discovery"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/status")
@@ -18,7 +19,7 @@ def live_scan_status():
     }
 
 
-@router.post("/live-scan")
+@router.post("/live-scan", dependencies=[Depends(require_admin)])
 def trigger_live_scan():
     if not is_configured():
         raise HTTPException(

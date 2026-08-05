@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-router = APIRouter(prefix="/tenants", tags=["tenants"])
+from app.auth import get_current_user
+
+router = APIRouter(prefix="/tenants", tags=["tenants"], dependencies=[Depends(get_current_user)])
 
 PROFILES_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "customer_profiles.json"
 

@@ -1,4 +1,6 @@
 import os
+import secrets
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -69,3 +71,14 @@ SENTINEL_STREAM_NAME = _env("SENTINEL_STREAM_NAME")
 SENTINEL_TENANT_ID = _env("SENTINEL_TENANT_ID")
 SENTINEL_CLIENT_ID = _env("SENTINEL_CLIENT_ID")
 SENTINEL_CLIENT_SECRET = _env("SENTINEL_CLIENT_SECRET")
+
+# Login/RBAC (app/auth.py). JWT_SECRET_KEY should be set explicitly in
+# production — an unset value falls back to a random key generated at
+# process start, which works fine for local dev but invalidates every
+# outstanding login on each restart/redeploy since the signature no longer
+# matches. ADMIN_PASSWORD must be set for the bootstrap admin account to be
+# created; if unset, no default user exists and login is simply unusable
+# until one is created directly in the database.
+JWT_SECRET_KEY = _env("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
+ADMIN_USERNAME = _env("ADMIN_USERNAME") or "admin"
+ADMIN_PASSWORD = _env("ADMIN_PASSWORD")
