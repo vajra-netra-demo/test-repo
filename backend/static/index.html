@@ -630,22 +630,51 @@
     async function runLiveScan() {
       const btn = document.getElementById("scanBtn");
       btn.disabled = true;
-      btn.textContent = "Scanning…";
+      btn.textContent = "Starting…";
       try {
         const res = await fetch("/discovery/live-scan", { method: "POST" });
         const data = await res.json();
-        if (res.ok) {
-          showToast(`Live scan complete — ingested ${data.ingested} real tool(s). Readiness: ${data.readiness_score}/100.`, "success");
-          await loadTools();
-        } else {
+        if (!res.ok) {
           showToast("Live scan failed: " + (data.detail || "unknown error"), "error");
+          btn.disabled = false;
+          btn.innerHTML = "&#8635; Run Live Scan";
+          return;
         }
+        btn.textContent = "Scanning… (running in background)";
+        showToast("Live scan started — this can take a few minutes for a large tool count. You can keep using the dashboard meanwhile.", "info");
+        pollScanProgress();
       } catch (e) {
         showToast("Live scan request failed: " + e, "error");
-      } finally {
         btn.disabled = false;
         btn.innerHTML = "&#8635; Run Live Scan";
       }
+    }
+
+    function pollScanProgress() {
+      const btn = document.getElementById("scanBtn");
+      const check = async () => {
+        let data;
+        try {
+          const res = await fetch("/discovery/scan-progress");
+          data = await res.json();
+        } catch (e) {
+          setTimeout(check, 5000);
+          return;
+        }
+        if (data.running) {
+          setTimeout(check, 4000);
+          return;
+        }
+        btn.disabled = false;
+        btn.innerHTML = "&#8635; Run Live Scan";
+        if (data.last_error) {
+          showToast("Live scan failed: " + data.last_error, "error");
+        } else if (data.last_result) {
+          showToast(`Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`, "success");
+        }
+        loadTools();
+      };
+      check();
     }
 
     function downloadReport() {

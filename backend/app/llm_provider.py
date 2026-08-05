@@ -32,7 +32,13 @@ def call_llm(prompt: str, max_tokens: int) -> str:
     duplicated client setup between risk_engine.py and triage_agent.py."""
     import anthropic  # lazy import — only required when this path actually runs
 
-    client = anthropic.AnthropicFoundry(api_key=ANTHROPIC_FOUNDRY_API_KEY, resource=ANTHROPIC_FOUNDRY_RESOURCE)
+    # A full scan cycle calls this once per tool, sequentially. Without a
+    # bounded timeout, one slow/hung call stalls the entire batch (and the
+    # background scan thread — see app/manual_scan.py) indefinitely, with no
+    # way to recover short of a server restart.
+    client = anthropic.AnthropicFoundry(
+        api_key=ANTHROPIC_FOUNDRY_API_KEY, resource=ANTHROPIC_FOUNDRY_RESOURCE, timeout=30.0,
+    )
     response = client.messages.create(
         model=MODEL_NAME,
         max_tokens=max_tokens,
