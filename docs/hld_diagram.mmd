@@ -1,0 +1,30 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e8eefb', 'primaryBorderColor': '#2e5aa8', 'primaryTextColor': '#12151c', 'lineColor': '#2e5aa8', 'tertiaryColor': '#ffffff', 'fontFamily': 'Consolas, monospace', 'fontSize': '15px'}}}%%
+flowchart TB
+  subgraph SRC["Where risk actually enters"]
+    direction LR
+    EMP1["Employee<br/>clicks 'Allow' on a SaaS/AI tool"]
+    EMP2["Employee<br/>installs a browser extension / local app"]
+  end
+
+  EMP1 -->|"OAuth grant<br/>recorded centrally"| IDP["Identity provider<br/>Microsoft 365 / Google Workspace / GitHub org"]
+  EMP2 -->|"local install<br/>no cloud record exists"| DEVICE["Employee endpoint<br/>Windows / Linux"]
+
+  IDP -->|"admin-consented API<br/>read-only, org-wide"| CORE
+  DEVICE -->|"endpoint agent<br/>reads real extension manifests +<br/>installed-software inventory"| CORE
+
+  subgraph CORE["NETRA core"]
+    direction TB
+    RISK["Risk engine<br/>Claude Haiku 4.5 - Microsoft Foundry"]
+    TRIAGE["Triage agent"]
+    RISK --> TRIAGE
+  end
+
+  CORE --> DASH["Dashboard + evidence report<br/>per-tenant view, incl. endpoint devices"]
+  CORE -->|"high-risk finding"| SLACK["Slack alert"]
+  CORE -->|"high-risk finding"| SENTINEL["Microsoft Sentinel<br/>real Log Analytics workspace, KQL-queryable"]
+  DASH --> OFFICER["Compliance / IT admin"]
+  OFFICER -->|"confirms"| ACT["Auto-fix: revoke (API)"]
+  ACT -->|"writes back"| IDP
+
+  classDef built fill:#e6f4ec,stroke:#21754c,color:#12151c;
+  class IDP,RISK,TRIAGE,DASH,SLACK,OFFICER,DEVICE,EMP2,SENTINEL built;

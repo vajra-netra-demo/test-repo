@@ -1,0 +1,49 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e8eefb', 'primaryBorderColor': '#2e5aa8', 'primaryTextColor': '#12151c', 'lineColor': '#2e5aa8', 'tertiaryColor': '#ffffff', 'fontFamily': 'Consolas, monospace', 'fontSize': '13px'}}}%%
+flowchart TD
+  TRIG1["scheduler.py<br/>every 30 min"] --> PIPE
+  TRIG2["Dashboard<br/>'Run Live Scan' button"] --> MSCAN["manual_scan.py<br/>background thread, returns immediately"]
+  MSCAN --> PIPE
+  TRIG2 -.->|"polls"| PROG["GET /discovery/scan-progress"]
+  TRIG3["Agent scheduler<br/>user-configured Task Scheduler / cron"] --> AGENT
+
+  PIPE["scan_pipeline.py<br/>run_full_cycle()"] --> DISC["discovery_provider.py"]
+  DISC -->|primary| GH["github_discovery.py<br/>GET /orgs/:org/installations"]
+  DISC -.->|fallback, blocked| MSG["live_discovery.py<br/>Microsoft Graph"]:::planned
+  DISC -.->|dormant, needs creds| ME["manageengine_discovery.py"]:::planned
+  DISC -.->|dormant, needs creds| GWS["google_workspace_discovery.py"]:::planned
+
+  AGENT["Endpoint agent<br/>netra_agent.py - Windows/Linux"] -->|"browser extensions +<br/>installed software"| AINGEST["POST /discovery/endpoint-report"]
+  AINGEST --> STORE1B[("EndpointDevice rows")]
+
+  GH --> GEO["network_intel.py<br/>DNS + IP geolocation"]
+  GEO --> STORE1[("SaaSTool rows<br/>source = live")]
+
+  PIPE --> REASSESS["Re-assess every tool<br/>sample + live + endpoint"]
+  STORE1B -.-> REASSESS
+  REASSESS --> RE["risk_engine.py<br/>assess_tool()"]
+  RE --> RAG["rag/retriever.py<br/>TF-IDF retrieval over 19 clauses<br/>per-tool relevant subset"]
+  RE -->|"is_configured()"| LLMP["llm_provider.py<br/>single call_llm() entry point"]
+  LLMP --> FOUNDRY["AnthropicFoundry client<br/>claude-haiku-4-5 - Azure, 30s timeout"]
+  RE --> TA["triage_agent.py<br/>triage_tool()"]
+  TA --> LLMP
+  TA --> STORE2[("SaaSTool rows<br/>risk_score, flags, triage<br/>Postgres in prod, SQLite in dev")]
+
+  PIPE --> SNAP["snapshot.py<br/>record_snapshot()"]
+  SNAP --> STORE3[("ScanSnapshot row")]
+  PIPE -->|"High-risk"| SLACK["slack_notify.py"]
+  PIPE -->|"High-risk, all sources"| SENT["siem/sentinel_connector.py"]
+  SENT --> SENTWS[("Microsoft Sentinel<br/>real Log Analytics workspace")]
+
+  CLASSIFY["POST /classify/text"]:::planned2 --> PRESIDIO["classification/presidio_engine.py<br/>+ indian_recognizers.py<br/>PAN/Aadhaar/IFSC/GSTIN, real checksums"]:::planned2
+  PRESIDIO --> STORE4[("ClassificationScan rows")]:::planned2
+
+  STORE2 --> API["FastAPI routers<br/>/tools /report /discovery /tenants<br/>/regulation /classify /endpoint"]
+  STORE3 --> API
+  STORE4 -.-> API
+  PROG -.-> API
+  API --> UI["static/index.html<br/>Dashboard, Endpoint Devices,<br/>Classify Text, Regulation Search"]
+
+  UI -->|"admin confirms"| REVOKE["POST /tools/:id/auto-fix<br/>real GitHub revoke"]
+
+  classDef planned fill:#fbf1e0,stroke:#b5720a,color:#12151c,stroke-dasharray: 4 3;
+  classDef planned2 fill:#fbf1e0,stroke:#b5720a,color:#12151c,stroke-dasharray: 2 2;
