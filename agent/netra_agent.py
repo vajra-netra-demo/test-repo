@@ -56,6 +56,33 @@ def _chrome_like_profile_dirs():
     return [(name, root) for name, root in candidates if root.exists()]
 
 
+def _resolve_localized_name(name, manifest, version_dir):
+    """manifest["name"] is sometimes a "__MSG_key__" placeholder pointing at
+    a key in _locales/<locale>/messages.json rather than a literal string —
+    Chrome's i18n mechanism for extensions. Look the real string up there;
+    fall back to the raw placeholder only if that file/key isn't found."""
+    if not name.startswith("__MSG_") or not name.endswith("__"):
+        return name
+    key = name[len("__MSG_"):-len("__")]
+    locales_dir = version_dir / "_locales"
+    locale_candidates = [manifest.get("default_locale")] if manifest.get("default_locale") else []
+    locale_candidates += ["en", "en_US"]
+    for locale in locale_candidates:
+        if not locale:
+            continue
+        messages_path = locales_dir / locale / "messages.json"
+        if not messages_path.exists():
+            continue
+        try:
+            messages = json.loads(messages_path.read_text(encoding="utf-8", errors="ignore"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        entry = messages.get(key)
+        if entry and entry.get("message"):
+            return entry["message"]
+    return name
+
+
 def scan_browser_extensions():
     """Reads installed Chrome/Edge extension manifest.json files directly
     from disk — the real `permissions` array on each manifest maps onto
@@ -78,6 +105,7 @@ def scan_browser_extensions():
                 except (json.JSONDecodeError, OSError):
                     continue
                 name = manifest.get("name", ext_dir.name)
+                name = _resolve_localized_name(name, manifest, version_dir)
                 if name.startswith("__MSG_"):
                     name = f"{ext_dir.name} (localized name unavailable)"
                 permissions = list(manifest.get("permissions", [])) + list(manifest.get("host_permissions", []))
