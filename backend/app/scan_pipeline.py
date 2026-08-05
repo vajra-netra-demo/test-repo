@@ -17,6 +17,7 @@ from app.snapshot import record_snapshot
 from app.triage_agent import triage_tool
 from app.slack_notify import notify_high_risk_findings
 from app.siem.sentinel_connector import push_findings as push_to_sentinel
+from app.siem.splunk_connector import push_findings as push_to_splunk
 
 HIGH_RISK_THRESHOLD = 70
 
@@ -101,6 +102,7 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
     ]
     if high_risk_all:
         push_to_sentinel(high_risk_all)
+        push_to_splunk(high_risk_all)
 
     snapshot = record_snapshot(db, triggered_by)
 

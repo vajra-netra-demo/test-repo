@@ -72,6 +72,14 @@ SENTINEL_TENANT_ID = _env("SENTINEL_TENANT_ID")
 SENTINEL_CLIENT_ID = _env("SENTINEL_CLIENT_ID")
 SENTINEL_CLIENT_SECRET = _env("SENTINEL_CLIENT_SECRET")
 
+# Splunk HTTP Event Collector push connector (app/siem/splunk_connector.py)
+# — coded against Splunk's real, documented HEC API, but genuinely
+# unactivated: the team has no real Splunk instance/token to test against.
+# Left unconfigured (is_configured() returns False) until real access
+# exists, same status as manageengine_discovery.py / google_workspace_discovery.py.
+SPLUNK_HEC_URL = _env("SPLUNK_HEC_URL")
+SPLUNK_HEC_TOKEN = _env("SPLUNK_HEC_TOKEN")
+
 # Login/RBAC (app/auth.py). JWT_SECRET_KEY should be set explicitly in
 # production — an unset value falls back to a random key generated at
 # process start, which works fine for local dev but invalidates every
