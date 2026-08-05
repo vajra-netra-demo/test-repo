@@ -22,3 +22,13 @@ scikit-learn>=1.4
 # chosen over python-jose/passlib to avoid the native-dependency deploy
 # friction seen elsewhere in this project.
 pyjwt>=2.9
+
+# Sensitive-data classification (app/classification/) — real Presidio
+# pattern recognizers for PAN/Aadhaar/IFSC/GSTIN. The model is a direct
+# pip wheel (not "python -m spacy download", which needs a build step
+# Railway has no hook for), so this installs like any other package —
+# safe to bundle by default, unlike the presidio+spacy combo's earlier
+# history of being left out of the production build.
+presidio-analyzer==2.2.364
+spacy==3.8.13
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
