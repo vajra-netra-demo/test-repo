@@ -13,9 +13,19 @@ Indian-identifier training data and training time neither of which exist
 for a hackathon build. Presidio's pattern recognizers (indian_recognizers.py)
 plus real checksum validation (Verhoeff for Aadhaar, mod-36 for GSTIN) cover
 the actual, practical need — deterministic detection of structured
-identifiers — without needing a trained model at all. A custom NER model
-would only earn its cost for unstructured/free-text PII detection beyond
-what regex+checksums already catch correctly.
+identifiers — without needing a trained model at all.
+
+For unstructured PII (a name or organization mentioned in free text, which
+regex/checksums structurally can't catch), this does now use the spaCy model
+already loaded above via Presidio's built-in SpacyRecognizer (PERSON/
+LOCATION/ORGANIZATION — see RELEVANT_ENTITIES below). This is still not a
+custom-trained model for this domain — it's the same off-the-shelf spaCy
+NER everyone uses — and it has the real, honest limitation general-purpose
+NER always has: it can misfire on structured identifiers. In our own
+testing it mislabeled "PAN" itself as ORGANIZATION and a PAN number as
+PERSON in the same sentence. That's exactly why it stays a complementary
+signal, layered alongside the deterministic checksum-validated recognizers,
+not a replacement for them.
 """
 
 from functools import lru_cache
@@ -42,9 +52,21 @@ def get_analyzer():
 # Entities worth surfacing in NETRA's context — the built-in generic ones
 # (email, phone, credit card) plus our four Indian-specific ones. Presidio
 # ships several other built-ins (US SSN, IBAN, etc.) that are noise here.
+#
+# PERSON/LOCATION/ORGANIZATION are NOT new pattern recognizers — they come
+# free from spaCy's own pretrained NER model (en_core_web_sm), which
+# Presidio's SpacyRecognizer already wraps because get_analyzer() configured
+# spaCy as the nlp_engine (originally just for tokenization ahead of the
+# regex/checksum recognizers below). This is still not a custom-trained
+# model for this domain — it's the same off-the-shelf model everyone else
+# uses spaCy for — but it's a genuine, real complementary layer for
+# unstructured PII (a name or org mentioned in free text) that regex and
+# checksum validation structurally cannot catch, since PAN/Aadhaar/IFSC/
+# GSTIN detection only ever looks for a fixed identifier shape.
 RELEVANT_ENTITIES = [
     "IN_PAN", "IN_AADHAAR", "IN_IFSC", "IN_GSTIN",
     "EMAIL_ADDRESS", "PHONE_NUMBER", "CREDIT_CARD",
+    "PERSON", "LOCATION", "ORGANIZATION",
 ]
 
 
@@ -68,7 +90,11 @@ def classify_text(text: str) -> dict:
     # sensitivity, weighted slightly higher for the four regulated Indian
     # identifiers than for generic PII — mirrors risk_engine.py's own
     # transparent, explainable scoring style rather than a black-box number.
-    weights = {"IN_PAN": 25, "IN_AADHAAR": 30, "IN_IFSC": 20, "IN_GSTIN": 20, "EMAIL_ADDRESS": 5, "PHONE_NUMBER": 5, "CREDIT_CARD": 15}
+    weights = {
+        "IN_PAN": 25, "IN_AADHAAR": 30, "IN_IFSC": 20, "IN_GSTIN": 20,
+        "EMAIL_ADDRESS": 5, "PHONE_NUMBER": 5, "CREDIT_CARD": 15,
+        "PERSON": 8, "LOCATION": 3, "ORGANIZATION": 3,
+    }
     sensitivity_score = min(sum(weights.get(et, 5) for et in entity_counts), 100)
 
     return {
