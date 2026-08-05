@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.auth import bootstrap_admin_user
 from app.config import ADMIN_PASSWORD, ADMIN_USERNAME
-from app.database import Base, SessionLocal, engine
+from app.database import Base, SessionLocal, engine, ensure_new_columns
 from app.routers import auth, tools, report, discovery, tenants, endpoint, regulation
 from app.scheduler import start_scheduler
 
@@ -28,6 +28,7 @@ app.add_middleware(
 )
 
 Base.metadata.create_all(bind=engine)
+ensure_new_columns()
 
 app.include_router(auth.router)
 app.include_router(tools.router)

@@ -30,6 +30,8 @@ class SaaSToolOut(BaseModel):
     endpoint_device_id: Optional[str] = None
     resolved_ip: Optional[str] = None
     hosting_region_source: str = "declared"
+    tls_issuer_org: Optional[str] = None
+    tls_subject_org: Optional[str] = None
 
 
 class RemediateRequest(BaseModel):

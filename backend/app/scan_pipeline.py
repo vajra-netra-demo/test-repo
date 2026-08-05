@@ -65,6 +65,7 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
                 risk_score=risk["risk_score"], risk_flags=risk["risk_flags"], risk_reasoning=risk["risk_reasoning"],
                 triage_decision=triage["decision"], triage_reasoning=triage["reasoning"],
                 resolved_ip=geo["resolved_ip"], hosting_region_source=geo["hosting_region_source"],
+                tls_issuer_org=geo.get("tls_issuer_org"), tls_subject_org=geo.get("tls_subject_org"),
             ))
             if risk["risk_score"] >= HIGH_RISK_THRESHOLD:
                 high_risk_live_findings.append({

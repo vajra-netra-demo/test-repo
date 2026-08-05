@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from app.config import DATABASE_URL
@@ -26,3 +26,33 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# No migrations framework in this project — Base.metadata.create_all() only
+# ever issues CREATE TABLE IF NOT EXISTS, it never ALTERs an existing table.
+# That's fine for brand-new tables, but production's saas_tools table already
+# has real scanned data in it, so a newly-added nullable column needs an
+# actual ALTER TABLE or every write referencing it fails. This runs after
+# create_all() at startup, checks what's actually there via SQLAlchemy's
+# inspector, and adds only what's missing — safe to run on every boot,
+# including a completely fresh database (table won't exist yet the first
+# time, so this simply no-ops and create_all's own columns stand).
+_NEW_NULLABLE_COLUMNS = {
+    "saas_tools": {
+        "tls_issuer_org": "VARCHAR",
+        "tls_subject_org": "VARCHAR",
+    },
+}
+
+
+def ensure_new_columns():
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    for table, columns in _NEW_NULLABLE_COLUMNS.items():
+        if table not in existing_tables:
+            continue
+        existing_columns = {c["name"] for c in inspector.get_columns(table)}
+        with engine.begin() as conn:
+            for col, coltype in columns.items():
+                if col not in existing_columns:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {coltype}"))

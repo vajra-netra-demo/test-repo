@@ -75,6 +75,13 @@ class SaaSTool(Base):
     resolved_ip = Column(String, nullable=True)
     hosting_region_source = Column(String, nullable=False, default="declared")  # "declared" | "geoip-lookup" | "unknown"
 
+    # Real TLS certificate read (app/network_intel.py::inspect_tls_certificate) —
+    # a second, independent network-layer signal alongside DNS/GeoIP. Null
+    # whenever the handshake fails or the cert carries no organizationName
+    # (common for Let's Encrypt/DV certificates).
+    tls_issuer_org = Column(String, nullable=True)
+    tls_subject_org = Column(String, nullable=True)
+
 
 class EndpointDevice(Base):
     """One row per device that has ever checked in via the endpoint discovery

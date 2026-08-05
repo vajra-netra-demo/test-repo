@@ -1312,6 +1312,7 @@
             <div><strong>Scopes:</strong> ${(t.oauth_scopes || []).join(", ") || "—"}</div>
             <div><strong>Data accessed:</strong> ${(t.data_categories_accessed || []).join(", ") || "—"}</div>
             <div><strong>Hosting:</strong> ${t.hosting_region} · <strong>Last used:</strong> ${t.last_used}</div>
+            ${(t.tls_issuer_org || t.tls_subject_org) ? `<div><strong>TLS certificate:</strong> ${t.tls_subject_org ? `issued to ${t.tls_subject_org}` : "no organization name on cert (common for Let's Encrypt/DV certs)"}${t.tls_issuer_org ? `, by ${t.tls_issuer_org}` : ""} — real handshake, second independent network signal alongside DNS/GeoIP</div>` : ""}
             ${t.triage_reasoning ? `<div class="triage-note"><strong>Triage Agent (${t.triage_decision}):</strong> ${t.triage_reasoning}</div>` : ""}
             <button class="remediate-btn ${t.remediated ? "done" : ""}" data-id="${t.id}" data-remediated="${t.remediated}">
               ${t.remediated ? "✓ Remediated — click to undo" : "Mark as Remediated"}
