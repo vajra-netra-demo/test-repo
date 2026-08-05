@@ -14,23 +14,13 @@ from app.risk_engine import assess_tool
 from app.discovery_provider import fetch_live_tools, is_configured as live_scan_configured
 from app.network_intel import resolve_hosting_region
 from app.snapshot import record_snapshot
+from app.tool_utils import tool_to_dict as _tool_to_dict
 from app.triage_agent import triage_tool
 from app.slack_notify import notify_high_risk_findings
 from app.siem.sentinel_connector import push_findings as push_to_sentinel
 from app.siem.splunk_connector import push_findings as push_to_splunk
 
 HIGH_RISK_THRESHOLD = 70
-
-
-def _tool_to_dict(t: SaaSTool) -> dict:
-    return {
-        "id": t.id, "tool_name": t.tool_name, "vendor": t.vendor, "category": t.category,
-        "connected_via": t.connected_via, "department": t.department, "connected_by_role": t.connected_by_role,
-        "first_connected": t.first_connected, "last_used": t.last_used,
-        "monthly_active_users": t.monthly_active_users, "oauth_scopes": t.oauth_scopes,
-        "data_categories_accessed": t.data_categories_accessed, "hosting_region": t.hosting_region,
-        "source": t.source, "remediated": t.remediated,
-    }
 
 
 def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
@@ -81,17 +71,33 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
 
     # Re-assess every tool (sample + live + endpoint) so nothing is ever left stale.
     all_tools = db.query(SaaSTool).all()
-    for t in all_tools:
-        risk = assess_tool(_tool_to_dict(t))
-        t.risk_score = risk["risk_score"]
-        t.risk_flags = risk["risk_flags"]
-        t.risk_reasoning = risk["risk_reasoning"]
 
-        triage_input = {**_tool_to_dict(t), **risk}
-        triage = triage_tool(triage_input)
-        t.triage_decision = triage["decision"]
-        t.triage_reasoning = triage["reasoning"]
-    db.commit()
+    from app.tasks import is_configured as celery_configured
+    if celery_configured() and all_tools:
+        # Real parallel dispatch to a separate Celery worker process (see
+        # app/tasks.py) instead of one-at-a-time in this process. Each task
+        # commits its own row via its own DB session, so this session's
+        # copies are stale afterward -- expire and re-fetch rather than
+        # trust the in-memory `all_tools` objects.
+        from celery import group
+        from app.tasks import assess_and_store_tool
+
+        job = group(assess_and_store_tool.s(t.id) for t in all_tools).apply_async()
+        job.get(timeout=300, propagate=False)
+        db.expire_all()
+        all_tools = db.query(SaaSTool).all()
+    else:
+        for t in all_tools:
+            risk = assess_tool(_tool_to_dict(t))
+            t.risk_score = risk["risk_score"]
+            t.risk_flags = risk["risk_flags"]
+            t.risk_reasoning = risk["risk_reasoning"]
+
+            triage_input = {**_tool_to_dict(t), **risk}
+            triage = triage_tool(triage_input)
+            t.triage_decision = triage["decision"]
+            t.triage_reasoning = triage["reasoning"]
+        db.commit()
 
     # Push the complete current High-risk picture (every source, not just
     # newly-discovered live findings) into the real Sentinel workspace, so a

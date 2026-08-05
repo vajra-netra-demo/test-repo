@@ -90,3 +90,13 @@ SPLUNK_HEC_TOKEN = _env("SPLUNK_HEC_TOKEN")
 JWT_SECRET_KEY = _env("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
 ADMIN_USERNAME = _env("ADMIN_USERNAME") or "admin"
 ADMIN_PASSWORD = _env("ADMIN_PASSWORD")
+
+# Real Celery task-queue integration (app/tasks.py) for parallelizing the
+# per-tool risk-assessment step across a genuine separate worker process —
+# see app/tasks.py's module docstring for why this uses Celery's filesystem
+# broker rather than a deployed Redis/RabbitMQ service. Optional: if unset,
+# the existing sequential in-process assessment loop runs exactly as before
+# (scan_pipeline.py), same "build now, activate later" pattern as every
+# other optional integration in this project.
+CELERY_ENABLED = _env("CELERY_ENABLED") == "1"
+CELERY_BROKER_PATH = _env("CELERY_BROKER_PATH") or "./celery_broker"
