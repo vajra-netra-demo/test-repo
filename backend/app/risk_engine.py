@@ -62,9 +62,18 @@ def _has_broad_scope(tool: dict) -> bool:
     return len(scopes) >= MANY_SCOPES_THRESHOLD
 
 
+def _clause_line(c: dict) -> str:
+    line = f"- [{c['id']}] ({c['framework']}) {c['topic']}: {c['summary']}"
+    if c.get("citation"):
+        line += f" [Citation: {c['citation']}]"
+    if c.get("caveat"):
+        line += f" [Caveat: {c['caveat']}]"
+    return line
+
+
 def build_prompt(tool: dict, clauses: list) -> str:
-    clause_text = "\n".join(f"- [{c['id']}] ({c['framework']}) {c['topic']}: {c['summary']}" for c in clauses)
-    return f"""You are a data-privacy risk analyst. Assess this discovered SaaS tool's access footprint against the regulatory clauses below, from an Indian company's compliance perspective.
+    clause_text = "\n".join(_clause_line(c) for c in clauses)
+    return f"""You are a data-privacy risk analyst. Assess this discovered SaaS tool's access footprint against the regulatory clauses below, from an Indian company's compliance perspective. Each clause carries a legally-verified citation and, where relevant, a caveat about its current force or scope (e.g. a provision that is enacted but not yet in force, or a circular that only binds a specific entity type) — reflect any applicable caveat in your reasoning rather than treating every clause as unconditionally binding today.
 
 TOOL:
 {json.dumps(tool, indent=2)}

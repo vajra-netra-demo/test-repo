@@ -1,44 +1,72 @@
 {
   "_meta": {
-    "description": "STARTER/REPRESENTATIVE clause set authored for the hackathon MVP demo. Paraphrased from well-known, publicly documented provisions of Indian data-privacy/security regulation for demo purposes. NOT verified against primary legal text — before any real customer-facing use, have this checked against the actual DPDP Act 2023 text, RBI Cyber Security Framework circulars, and CERT-In Directions 2022.",
-    "action_item": "Someone (HR/PM) should replace this with verified clause citations sourced from official government publications before the pitch, or clearly caveat in the demo that citations are illustrative."
+    "description": "Legally verified against primary source text (Aug 2026) — each clause cites the specific Act section / circular number / paragraph it comes from, sourced via direct research against official/primary documents (DPDP Act bare text, RBI circulars fetched from rbi.org.in, CERT-In Directions fetched from cert-in.org.in, SEBI/IRDAI circulars triangulated across 3+ independent secondary sources where the primary PDF was not machine-readable). Corrections were made to 6 of 19 clauses where the original paraphrase overstated scope or misattributed a source; caveats were added where a clause's legal force, applicability, or citation confidence is not simple 'currently binding as written'.",
+    "verification_date": "2026-08-05",
+    "known_limitations": "SEBI and IRDAI circular PDFs returned as non-extractable/scanned content — those 5 clauses are verified via convergent secondary sources (law-firm client alerts, compliance vendors), not a direct primary-text read, and are flagged individually where a specific clause/paragraph number could not be confirmed."
   },
   "clauses": [
     {
       "id": "DPDP-MIN",
       "framework": "DPDP Act 2023",
       "topic": "Data minimization",
-      "summary": "A Data Fiduciary should only process personal data for the specific purpose consented to, and should not retain broader access than that purpose requires."
+      "summary": "Under Section 6(1), consent — and therefore processing — must be limited to personal data necessary for the specified purpose; under Section 8(7), the fiduciary must erase the data once that purpose is no longer being served, unless retention is legally required.",
+      "citation": "Sections 6(1), 8(7)",
+      "caveat": "Enacted Aug 2023, but this substantive provision is not yet in force — commencement is phased and this section takes effect 14 May 2027 per MeitY's notification; only definitions and Data Protection Board setup provisions are currently operative."
     },
     {
       "id": "DPDP-XBORDER",
       "framework": "DPDP Act 2023",
       "topic": "Cross-border data transfer",
-      "summary": "Personal data transferred to or processed by entities outside India may be subject to government-notified restrictions; organizations are expected to know where their data is processed and by whom."
+      "summary": "Section 16(1) allows the Central Government to notify that transfer of personal data to specified countries/territories outside India is restricted; absent such a notification, cross-border transfer is permitted by default.",
+      "citation": "Section 16(1)",
+      "caveat": "Enacted Aug 2023, not yet in force — effective 14 May 2027. As of this writing, no country/territory restriction has actually been notified under this section."
     },
     {
       "id": "DPDP-PROCESSOR",
       "framework": "DPDP Act 2023",
       "topic": "Data Processor accountability",
-      "summary": "Any third-party service that processes personal data on a company's behalf is a Data Processor, and the company (as Data Fiduciary) remains accountable for that processor's handling of the data."
+      "summary": "Any third-party service that processes personal data on a company's behalf is a Data Processor, and the company (as Data Fiduciary) remains accountable for that processor's handling of the data, irrespective of any agreement to the contrary.",
+      "citation": "Sections 2(k), 8(1), 8(2)",
+      "caveat": "Enacted Aug 2023, not yet in force — effective 14 May 2027."
     },
     {
       "id": "DPDP-BREACH",
       "framework": "DPDP Act 2023",
       "topic": "Breach notification",
-      "summary": "Personal data breaches must be reported to the Data Protection Board and affected individuals without undue delay."
+      "summary": "Under Section 8(6), a Data Fiduciary must intimate the Data Protection Board and each affected Data Principal of a personal data breach in the form/manner prescribed by rules; Rule 7 of the DPDP Rules, 2025 specifies this must happen without delay, with a detailed report to the Board within 72 hours.",
+      "citation": "Section 8(6); DPDP Rules 2025, Rule 7",
+      "caveat": "Enacted, not yet in force — effective 14 May 2027; Rule 7's 72-hour detail is likewise not yet operative."
     },
     {
       "id": "RBI-ACCESS-REVIEW",
-      "framework": "RBI Cyber Security Framework",
+      "framework": "RBI Cyber Security Framework (Scheduled Commercial Banks)",
       "topic": "Periodic access review",
-      "summary": "Regulated entities are expected to periodically review third-party and vendor access, and de-provision access that is no longer in active use."
+      "summary": "RBI's Cyber Security Framework circular requires time-bound, need-to-know access provisioning, deactivation of dormant accounts, and ongoing oversight of vendor arrangements — a synthesis of several baseline controls rather than one named 'periodic access review' clause.",
+      "citation": "RBI/2015-16/418, DBS.CO/CSITE/BC.11/33.01.001/2015-16 (2 Jun 2016), Annex 1 §§8.3, 8.6, 11.3–11.4; body para 9",
+      "caveat": "Applies specifically to Scheduled Commercial Banks (excluding RRBs) — NOT cooperative banks (separate framework: DCBS.CO.PCB.Cir.No.1/18.01.000/2018-19) or NBFCs (separate Master Direction). Citing this against a cooperative-bank tenant is a category error."
+    },
+    {
+      "id": "RBI-DUE-DILIGENCE",
+      "framework": "RBI Cyber Security Framework (Scheduled Commercial Banks)",
+      "topic": "Third-party due diligence before onboarding",
+      "summary": "Banks must evaluate and select vendors based on comprehensive risk assessment before onboarding, conduct background checks on vendor/third-party personnel, and continue regular due diligence and oversight afterward — not only periodic review after the fact.",
+      "citation": "RBI/2015-16/418, Annex 1 §§11.2, 11.3, 11.8–11.9",
+      "caveat": "Applies specifically to Scheduled Commercial Banks (excluding RRBs) — NOT cooperative banks or NBFCs, which have separate frameworks."
+    },
+    {
+      "id": "RBI-DATA-LOCALIZATION",
+      "framework": "RBI Payment Data Localization Circular",
+      "topic": "Payment system data localization",
+      "summary": "RBI's April 2018 circular requires payment system data to be stored only in India, permitting foreign-leg transaction data to also be stored abroad; the specific 24-hours-or-1-business-day (whichever earlier) deletion requirement for such foreign-stored data comes from RBI's subsequent FAQ clarification of June 2019, not the original circular itself.",
+      "citation": "RBI/2017-18/153, DPSS.CO.OD No.2785/06.08.005/2017-18 (6 Apr 2018); RBI FAQ clarification (26 Jun 2019)"
     },
     {
       "id": "CERTIN-INCIDENT",
       "framework": "CERT-In Directions, 2022",
       "topic": "Incident reporting timeline",
-      "summary": "Certain classes of cybersecurity incidents must be reported to CERT-In within a fixed short window (commonly cited as 6 hours) of being noticed."
+      "summary": "Only the 20 specific categories of cyber security incidents listed in Annexure I (e.g. data breach, data leak, ransomware, unauthorized access, DDoS, phishing) must be reported to CERT-In within 6 hours of the entity noticing the incident or being notified of it — not all cyber incidents generally.",
+      "citation": "CERT-In Directions No. 20(3)/2022-CERT-In (28 Apr 2022), para (ii) & Annexure I",
+      "caveat": "In force since 27 Jun 2022 and currently binding, but its constitutional validity is under a pending, unresolved challenge in the Delhi High Court."
     },
     {
       "id": "SEC-LEAST-PRIV",
@@ -50,73 +78,77 @@
       "id": "SEBI-VENDOR-RISK",
       "framework": "SEBI CSCRF (2024)",
       "topic": "Third-party/vendor risk assessment",
-      "summary": "SEBI-regulated entities (exchanges, depositories, brokers, mutual funds, KYC agencies) must assess third-party and vendor risk as part of their cybersecurity compliance framework, tiered by entity size."
+      "summary": "SEBI's CSCRF classifies regulated entities into five tiers — Market Infrastructure Institutions, Qualified REs, Mid-size REs, Small-size REs, and Self-certification REs — with third-party/vendor risk-assessment rigor (e.g. cyber-resilience audits) scaling by tier rather than simply by size.",
+      "citation": "SEBI/HO/ITD-1/ITD_CSC_EXT/P/CIR/2024/113 (20 Aug 2024)"
     },
     {
       "id": "SEBI-SBOM",
       "framework": "SEBI CSCRF (2024)",
       "topic": "Software Bill of Materials",
-      "summary": "Critical systems must maintain a Software Bill of Materials — a documented inventory of exactly what software/components are running and where they came from."
+      "summary": "Critical/core systems must maintain a Software Bill of Materials covering all software types (in-house, third-party custom, COTS, open-source, SaaS) with fields including license, supplier, transitive dependencies, and cryptographic hashes; legacy systems unable to comply need a board-approved risk-mitigation plan instead.",
+      "citation": "SEBI/HO/ITD-1/ITD_CSC_EXT/P/CIR/2024/113 (exact clause/paragraph number not independently confirmed — primary PDF was not machine-readable; substance corroborated across 6+ independent compliance-vendor sources)"
     },
     {
       "id": "IRDAI-VENDOR-RISK",
       "framework": "IRDAI Cyber Security Guidelines",
       "topic": "Third-party/vendor risk management",
-      "summary": "Insurers and intermediaries must manage third-party and vendor risk under a board-approved cybersecurity policy, with regular VAPT."
+      "summary": "Insurers and insurance intermediaries (brokers, corporate agents, web aggregators, TPAs, IMFs, repositories, and others) must manage third-party/vendor risk under a board-approved cybersecurity policy, with VAPT at least twice yearly and critical findings remediated within 30 days.",
+      "citation": "IRDAI/GA&HR/GDL/MISC/88/04/2023 (24 Apr 2023)"
     },
     {
       "id": "IRDAI-LOCALIZATION",
       "framework": "IRDAI Cyber Security Guidelines",
       "topic": "Policyholder data localization",
-      "summary": "Policyholder data must be stored in compliance with IRDAI's localization requirements; incidents involving this data must be reported to IRDAI within a defined timeline."
+      "summary": "IRDAI's 2023 Cyber Security Guidelines exempt insurers from that guideline's own data-localization clause (it applies to \"Regulated Entities other than insurers\"); insurers' actual policyholder-data localization duty instead sits in separate instruments (the Maintenance of Insurance Records Regulations 2015, e-commerce guidelines, and Minimum Information Regulations 2020).",
+      "citation": "IRDAI/GA&HR/GDL/MISC/88/04/2023; IRDAI (Maintenance of Insurance Records) Regulations, 2015",
+      "caveat": "The commonly-cited 6-hour incident-reporting figure for policyholder data has only single-source confirmation in this research pass — treat as lower-confidence pending further check."
     },
     {
       "id": "DPDP-CONSENT",
       "framework": "DPDP Act 2023",
       "topic": "Valid consent",
-      "summary": "Consent for processing personal data must be free, specific, informed, unconditional, and unambiguous, given through clear affirmative action, and must be as easily withdrawable as it was to give."
+      "summary": "Consent for processing personal data must be free, specific, informed, unconditional, and unambiguous, given through clear affirmative action, and must be as easily withdrawable as it was to give.",
+      "citation": "Sections 6(1), 6(4)",
+      "caveat": "Enacted Aug 2023, not yet in force — effective 14 May 2027."
     },
     {
       "id": "DPDP-DPO",
       "framework": "DPDP Act 2023",
       "topic": "Data Protection Officer appointment",
-      "summary": "A Significant Data Fiduciary (as notified by the government) must appoint a Data Protection Officer based in India and undertake periodic Data Protection Impact Assessments and independent audits."
+      "summary": "A Significant Data Fiduciary (as notified by the government) must appoint a Data Protection Officer based in India reporting to the board of directors, appoint an independent data auditor, and undertake periodic Data Protection Impact Assessments and audits.",
+      "citation": "Section 10(1), 10(2)",
+      "caveat": "Enacted Aug 2023, not yet in force — effective 14 May 2027."
     },
     {
       "id": "DPDP-PENALTY",
       "framework": "DPDP Act 2023",
       "topic": "Statutory penalties",
-      "summary": "Failure to take reasonable security safeguards to prevent a personal data breach can attract a penalty of up to two hundred fifty crore rupees under the Act's penalty schedule."
-    },
-    {
-      "id": "RBI-DUE-DILIGENCE",
-      "framework": "RBI Cyber Security Framework",
-      "topic": "Third-party due diligence before onboarding",
-      "summary": "Regulated entities are expected to perform cybersecurity due diligence on a vendor before onboarding it, not only during periodic reviews after the fact."
-    },
-    {
-      "id": "RBI-DATA-LOCALIZATION",
-      "framework": "RBI Payment Data Localization Circular",
-      "topic": "Payment system data localization",
-      "summary": "Data related to payment systems must be stored only in India; where processing occurs abroad, the data must be deleted from systems outside India within a defined window after processing."
+      "summary": "Failure to take reasonable security safeguards to prevent a personal data breach (Section 8(5)) can attract a penalty of up to two hundred fifty crore rupees under Item 1 of the Act's penalty Schedule; separately, failure to notify a breach under Section 8(6) carries a distinct, lower ceiling of two hundred crore rupees.",
+      "citation": "Section 8(5); Schedule, Item 1",
+      "caveat": "Enacted Aug 2023, not yet in force — effective 14 May 2027."
     },
     {
       "id": "CERTIN-LOGS",
       "framework": "CERT-In Directions, 2022",
       "topic": "ICT log retention",
-      "summary": "Organizations must enable and securely maintain logs of their ICT systems for a rolling 180 days, within Indian jurisdiction, and provide them to CERT-In on request."
+      "summary": "Organizations must enable and securely maintain logs of their ICT systems for a rolling 180 days, within Indian jurisdiction, and provide them to CERT-In on request.",
+      "citation": "CERT-In Directions No. 20(3)/2022-CERT-In, para (iv)",
+      "caveat": "In force since 27 Jun 2022 and currently binding, but its constitutional validity is under a pending, unresolved challenge in the Delhi High Court."
     },
     {
       "id": "CERTIN-SUBSCRIBER-KYC",
       "framework": "CERT-In Directions, 2022",
       "topic": "Cloud/VPN provider subscriber records",
-      "summary": "Cloud service, VPN, and data center providers must maintain accurate customer/subscriber information for a defined retention period after any account is closed."
+      "summary": "Data centres, VPS, cloud service, and VPN service providers must register and maintain 7 specific subscriber data fields (validated name, hire period, allotted IPs, registration email/IP/timestamp, purpose, address/contact, ownership pattern) for 5 years after registration cancellation or withdrawal.",
+      "citation": "CERT-In Directions No. 20(3)/2022-CERT-In, para (v)",
+      "caveat": "In force since 27 Jun 2022 and currently binding, but its constitutional validity is under a pending, unresolved challenge in the Delhi High Court."
     },
     {
       "id": "SEBI-INCIDENT-REPORT",
       "framework": "SEBI CSCRF (2024)",
       "topic": "Incident reporting timelines",
-      "summary": "SEBI-regulated entities must report cybersecurity incidents within prescribed timelines and maintain an incident response plan tiered to the entity's classification under the framework."
+      "summary": "SEBI-regulated entities must report cybersecurity incidents to SEBI and CERT-In within 6 hours of detection (with a separate 30-minute window to declare a \"Disaster\" for critical-system disruption), and maintain an incident response plan tiered to the entity's CSCRF classification.",
+      "citation": "SEBI/HO/ITD-1/ITD_CSC_EXT/P/CIR/2024/113 (20 Aug 2024)"
     }
   ]
 }

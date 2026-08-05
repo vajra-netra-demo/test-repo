@@ -199,6 +199,8 @@
   .reg-card .framework { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--accent-dark); }
   .reg-card .topic { font-size: 14px; font-weight: 700; margin: 3px 0 6px; }
   .reg-card .summary { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .reg-card .citation { font-size: 11px; color: var(--accent-dark); margin-top: 6px; font-family: monospace; }
+  .reg-card .caveat { font-size: 11.5px; color: var(--med-dark); background: var(--med-bg); border-radius: 6px; padding: 4px 8px; margin-top: 6px; }
   .config-note { font-size: 12.5px; color: var(--muted); background: #fafbfd; border: 1px dashed var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 10px; }
 </style>
 </head>
@@ -621,6 +623,8 @@
             <div class="framework">${c.framework}</div>
             <div class="topic">${c.topic}</div>
             <div class="summary">${c.summary}</div>
+            ${c.citation ? `<div class="citation">${c.citation}</div>` : ""}
+            ${c.caveat ? `<div class="caveat">⚠ ${c.caveat}</div>` : ""}
           </div>`).join("");
       } catch (e) {
         resultsDiv.innerHTML = `<div class="config-note">Request failed: ${e}</div>`;
