@@ -418,6 +418,17 @@
   </div><!-- /main -->
 
   <script>
+    // Lets this same file be deployed standalone (e.g. on Vercel) while still
+    // working when served directly by the FastAPI backend itself. Local dev
+    // and same-origin serving keep using relative paths unchanged; anywhere
+    // else (a separately-hosted static copy) talks to the backend explicitly.
+    const NETRA_BACKEND_URL = "https://test-repo-production-63cf.up.railway.app";
+    const _sameOrigin = window.location.origin.startsWith("http://localhost")
+      || window.location.origin.startsWith("http://127.0.0.1")
+      || window.location.origin === NETRA_BACKEND_URL;
+    const API_BASE = _sameOrigin ? "" : NETRA_BACKEND_URL;
+    function apiUrl(path) { return API_BASE + path; }
+
     let currentFilter = "all";
     let searchTerm = "";
     let sortKey = "risk_score";
@@ -450,7 +461,7 @@
       const sentinelPill = document.getElementById("sentinelStatus");
       const scanBtn = document.getElementById("scanBtn");
       try {
-        const res = await fetch("/discovery/status");
+        const res = await fetch(apiUrl("/discovery/status"));
         const data = await res.json();
         if (data.live_scan_configured) {
           pill.textContent = `Live scan: configured (${data.provider})`;
@@ -498,8 +509,8 @@
       const tbody = document.getElementById("endpointsBody");
       try {
         const [devicesRes, toolsRes] = await Promise.all([
-          fetch("/discovery/endpoints"),
-          fetch("/tools"),
+          fetch(apiUrl("/discovery/endpoints")),
+          fetch(apiUrl("/tools")),
         ]);
         const devices = await devicesRes.json();
         const tools = await toolsRes.json();
@@ -543,7 +554,7 @@
       btn.disabled = true;
       btn.textContent = "Classifying…";
       try {
-        const res = await fetch("/classify/text", {
+        const res = await fetch(apiUrl("/classify/text"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, label: label || null }),
@@ -578,7 +589,7 @@
     async function loadClassifyHistory() {
       const tbody = document.getElementById("classifyHistoryBody");
       try {
-        const res = await fetch("/classify/history?limit=20");
+        const res = await fetch(apiUrl("/classify/history?limit=20"));
         if (!res.ok) {
           tbody.innerHTML = `<tr><td colspan="5" class="config-note">Classification unavailable on this deployment (presidio-analyzer not installed).</td></tr>`;
           return;
@@ -612,7 +623,7 @@
       if (!query) { showToast("Enter a search term first.", "error"); return; }
       resultsDiv.innerHTML = `<div class="empty">Searching…</div>`;
       try {
-        const res = await fetch(`/regulation/search?q=${encodeURIComponent(query)}&k=5`);
+        const res = await fetch(apiUrl(`/regulation/search?q=${encodeURIComponent(query)}&k=5`));
         const data = await res.json();
         if (!res.ok || !data.results || data.results.length === 0) {
           resultsDiv.innerHTML = `<div class="config-note">No results (or regulation search unavailable on this deployment).</div>`;
@@ -636,7 +647,7 @@
       btn.disabled = true;
       btn.textContent = "Starting…";
       try {
-        const res = await fetch("/discovery/live-scan", { method: "POST" });
+        const res = await fetch(apiUrl("/discovery/live-scan"), { method: "POST" });
         const data = await res.json();
         if (!res.ok) {
           showToast("Live scan failed: " + (data.detail || "unknown error"), "error");
@@ -659,7 +670,7 @@
       const check = async () => {
         let data;
         try {
-          const res = await fetch("/discovery/scan-progress");
+          const res = await fetch(apiUrl("/discovery/scan-progress"));
           data = await res.json();
         } catch (e) {
           setTimeout(check, 5000);
@@ -683,16 +694,16 @@
 
     function downloadReport() {
       const q = currentTenant ? `?tenant_id=${encodeURIComponent(currentTenant)}` : "";
-      window.location.href = `/report/evidence${q}`;
+      window.location.href = apiUrl(`/report/evidence${q}`);
     }
 
     function downloadCsv() {
       const q = currentTenant ? `?tenant_id=${encodeURIComponent(currentTenant)}` : "";
-      window.location.href = `/report/csv${q}`;
+      window.location.href = apiUrl(`/report/csv${q}`);
     }
 
     async function loadTenantProfiles() {
-      const res = await fetch("/tenants");
+      const res = await fetch(apiUrl("/tenants"));
       tenantProfiles = await res.json();
       const select = document.getElementById("tenantSelect");
       tenantProfiles.forEach(p => {
@@ -1018,7 +1029,7 @@
           const btn = e.currentTarget;
           const newState = btn.dataset.remediated !== "true";
           btn.disabled = true;
-          await fetch(`/tools/${encodeURIComponent(btn.dataset.id)}/remediate`, {
+          await fetch(apiUrl(`/tools/${encodeURIComponent(btn.dataset.id)}/remediate`), {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ remediated: newState }),
@@ -1039,7 +1050,7 @@
             btn.disabled = true;
             btn.textContent = "Revoking…";
             try {
-              const res = await fetch(`/tools/${encodeURIComponent(btn.dataset.id)}/auto-fix`, { method: "POST" });
+              const res = await fetch(apiUrl(`/tools/${encodeURIComponent(btn.dataset.id)}/auto-fix`), { method: "POST" });
               const data = await res.json();
               if (res.ok) {
                 showToast(`Access revoked for real. New readiness score: ${data.readiness_score}/100.`, "success");
@@ -1062,7 +1073,7 @@
 
     async function loadTools() {
       const q = currentTenant ? `?tenant=${encodeURIComponent(currentTenant)}` : "";
-      const res = await fetch(`/tools${q}`);
+      const res = await fetch(apiUrl(`/tools${q}`));
       allTools = await res.json();
       renderTenantCard();
       renderSummary(allTools);
@@ -1075,7 +1086,7 @@
       const empty = document.getElementById("trendEmpty");
       let history;
       try {
-        const res = await fetch("/report/history");
+        const res = await fetch(apiUrl("/report/history"));
         history = await res.json();
       } catch (e) {
         return;

@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
@@ -11,6 +12,18 @@ from app.scheduler import start_scheduler
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="NETRA MVP API", version="0.1.0")
+
+# Allows the dashboard (static/index.html) to be hosted separately (e.g. on
+# Vercel) from this API (Railway) and still call it cross-origin. No
+# cookie-based auth exists to protect here — there's no login/RBAC at all
+# yet — so a wide-open CORS policy doesn't weaken anything that isn't
+# already this open.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 Base.metadata.create_all(bind=engine)
 
