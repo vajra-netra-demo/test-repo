@@ -34,11 +34,17 @@ from whichever machine it runs on.
    string — treat it like a password) and restart the server.
 2. Run once manually to confirm it works:
    ```
-   python netra_agent.py --backend-url http://127.0.0.1:8200 --token <your-token> --employee "Your Name" --department Engineering
+   python netra_agent.py --backend-url http://127.0.0.1:8200 --token <your-token>
    ```
+   `--employee` is optional — if you don't pass it, the agent uses the
+   OS-logged-in username on that machine automatically. That's the point:
+   **the exact same command/task can be copied to every machine unchanged**
+   — nobody has to edit a name into it per-device. Pass `--employee "Name"`
+   only if the OS username isn't a good label (e.g. a shared/service account).
    Add `--dry-run` first if you just want to see what it would report
    without submitting anything.
-3. Schedule it to run automatically:
+3. Schedule it to run automatically — use the identical command on every
+   machine you enroll:
 
 ### Windows (Task Scheduler)
 
@@ -58,5 +64,22 @@ crontab -e
 
 Only what's in the manifest/registry: extension/software name, vendor,
 version, declared permissions, and an install date if the OS reports one —
-plus the hostname and whatever `--employee`/`--department` labels you pass
-on the command line. No file content, no browsing history, no credentials.
+plus the hostname, the OS-logged-in username (or an explicit `--employee`
+label if you passed one), and `--department` if you passed one. No file
+content, no browsing history, no credentials.
+
+## Where that data ends up in the dashboard
+
+- `POST /discovery/endpoint-report` upserts one `EndpointDevice` row (host,
+  OS, employee, department, first/last check-in, agent version) and replaces
+  that device's `SaaSTool` rows (`source="endpoint"`) — one row per
+  extension/software finding, each carrying its name/vendor/permissions.
+- **Endpoint Devices** view: one row per device, from `GET /discovery/endpoints`.
+- **Employees** view: one row per distinct employee name seen across all
+  devices, with a device/tool count and a drill-down showing every finding
+  on their device(s), each with its real risk score/flags/triage decision.
+- Every endpoint finding also flows through the same pipeline as any other
+  discovered tool: it appears in **Tools**, gets a real Claude-scored risk
+  entry, feeds the **Graph Insights** department↔tool↔category graph, gets
+  matched against **MITRE ATT&CK** techniques and **regulatory clauses**,
+  and is included in **CSV/evidence exports** — no special-casing.

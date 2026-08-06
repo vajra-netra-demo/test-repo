@@ -17,6 +17,7 @@ Schedule it with Windows Task Scheduler or cron — see the README for both.
 """
 
 import argparse
+import getpass
 import json
 import os
 import platform
@@ -243,12 +244,17 @@ def main():
     parser = argparse.ArgumentParser(description="NETRA read-only endpoint discovery agent")
     parser.add_argument("--backend-url", required=True, help="e.g. https://your-netra-host or http://127.0.0.1:8200")
     parser.add_argument("--token", required=True, help="Must match the backend's ENDPOINT_AGENT_TOKEN")
-    parser.add_argument("--employee", default=None, help="Employee name/email this device belongs to")
+    parser.add_argument(
+        "--employee", default=None,
+        help="Employee name/email this device belongs to. Same command works on every machine "
+             "unchanged: if omitted, the OS-logged-in username on THIS machine is used automatically.",
+    )
     parser.add_argument("--department", default=None)
     parser.add_argument("--dry-run", action="store_true", help="Scan and print the report without submitting it")
     args = parser.parse_args()
 
-    report = build_report(args.employee, args.department)
+    employee = args.employee or getpass.getuser()
+    report = build_report(employee, args.department)
 
     if args.dry_run:
         print(json.dumps(report, indent=2))
