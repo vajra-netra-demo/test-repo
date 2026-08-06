@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export interface DropdownOption {
   value: string;
@@ -24,15 +25,45 @@ interface DropdownProps {
 // in. This is a fully custom dropdown (button + floating listbox we render
 // ourselves) so it can actually be styled, in both themes, like everything
 // else in the app.
+//
+// The list is rendered through a portal into document.body rather than as
+// a normal absolutely-positioned child — any ancestor with backdrop-filter
+// (every .glass panel in this app) establishes its own stacking context,
+// which traps a z-indexed descendant inside it. Two glass panels stacked
+// on a page (e.g. the "Create account" card above the users table) each
+// get their own context; the later one always paints over the earlier
+// one's overflowing content regardless of the dropdown's own z-index. A
+// portal escapes every ancestor's stacking context, so this can't recur
+// wherever Dropdown gets used next to another glass surface.
 export function Dropdown({ value, onChange, options, className, minWidth = 160 }: DropdownProps) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const current = options.find((o) => o.value === value);
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const update = () => {
+      const r = triggerRef.current!.getBoundingClientRect();
+      setRect({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, minWidth) });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open, minWidth]);
 
   useEffect(() => {
     if (!open) return;
     function onPointerDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (listRef.current?.contains(target)) return;
+      setOpen(false);
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -46,8 +77,9 @@ export function Dropdown({ value, onChange, options, className, minWidth = 160 }
   }, [open]);
 
   return (
-    <div ref={rootRef} className={`relative ${className ?? ""}`}>
+    <div className={className}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
@@ -59,36 +91,40 @@ export function Dropdown({ value, onChange, options, className, minWidth = 160 }
         <ChevronDown size={15} strokeWidth={2.25} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && (
-        // Solid bg-popover, not .glass — this floats OVER other content
-        // (charts, colored text), so it needs to fully occlude what's
-        // behind it rather than blend with it like an in-flow glass panel.
-        <ul
-          role="listbox"
-          style={{ minWidth }}
-          className="animate-view-fade absolute z-20 mt-1.5 max-h-72 w-full overflow-auto rounded-lg border border-border bg-popover py-1 shadow-xl"
-        >
-          {options.map((opt) => {
-            const selected = opt.value === value;
-            return (
-              <li key={opt.value} role="option" aria-selected={selected}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                  }}
-                  className={`block w-full px-3.5 py-2 text-left text-[13px] transition-colors ${
-                    selected ? "bg-accent-light font-semibold text-accent" : "text-text hover:bg-tint/[0.06]"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {open &&
+        rect &&
+        createPortal(
+          // Solid bg-popover, not .glass — this floats OVER other content
+          // (charts, colored text, other glass panels), so it needs to
+          // fully occlude what's behind it rather than blend with it.
+          <ul
+            ref={listRef}
+            role="listbox"
+            style={{ top: rect.top, left: rect.left, width: rect.width }}
+            className="animate-view-fade fixed z-50 max-h-72 overflow-auto rounded-lg border border-border bg-popover py-1 shadow-xl"
+          >
+            {options.map((opt) => {
+              const selected = opt.value === value;
+              return (
+                <li key={opt.value} role="option" aria-selected={selected}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                    className={`block w-full px-3.5 py-2 text-left text-[13px] transition-colors ${
+                      selected ? "bg-accent-light font-semibold text-accent" : "text-text hover:bg-tint/[0.06]"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>,
+          document.body,
+        )}
     </div>
   );
 }
