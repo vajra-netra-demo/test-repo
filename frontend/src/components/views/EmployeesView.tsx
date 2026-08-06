@@ -4,6 +4,8 @@ import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
 import { useToast } from "../Toaster";
 import { RiskBadge } from "../Badge";
+import { Pagination } from "../Pagination";
+import { usePagination } from "../../hooks/usePagination";
 import { riskLevel } from "../../lib/risk";
 import type { EmployeeProfile, EmployeeSummary } from "../../types";
 
@@ -29,6 +31,9 @@ export function EmployeesView() {
   const [profileError, setProfileError] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const employeePagination = usePagination(employees ?? []);
+  const toolsPagination = usePagination(profile?.tools ?? []);
+
   async function loadEmployees() {
     try {
       setEmployees(await api.getEmployees());
@@ -46,6 +51,7 @@ export function EmployeesView() {
     setSelected(employee);
     setProfile(null);
     setProfileError(false);
+    toolsPagination.setPage(1);
     try {
       setProfile(await api.getEmployeeProfile(employee));
     } catch {
@@ -99,7 +105,7 @@ export function EmployeesView() {
         </p>
       </div>
 
-      <div className="glass glass-hover rounded-xl p-5">
+      <div className="glass glass-hover overflow-hidden rounded-xl">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -123,7 +129,7 @@ export function EmployeesView() {
                 No employees found yet — run agent/netra_agent.py on a machine to enroll it.
               </EmptyRow>
             ) : (
-              employees.map((e) => (
+              employeePagination.paged.map((e) => (
                 <tr
                   key={e.employee}
                   onClick={() => selectEmployee(e.employee)}
@@ -152,6 +158,14 @@ export function EmployeesView() {
             )}
           </tbody>
         </table>
+        <Pagination
+          page={employeePagination.page}
+          pageCount={employeePagination.pageCount}
+          pageSize={employeePagination.pageSize}
+          totalRows={employeePagination.totalRows}
+          onPageChange={employeePagination.setPage}
+          onPageSizeChange={employeePagination.setPageSize}
+        />
       </div>
 
       {selected && (
@@ -223,7 +237,7 @@ export function EmployeesView() {
                     {profile ? "No tools found on this employee's device(s)." : "Loading…"}
                   </EmptyRow>
                 ) : (
-                  profile.tools.map((t) => {
+                  toolsPagination.paged.map((t) => {
                     const level = riskLevel(t.risk_score);
                     return (
                       <tr key={t.id} className="transition-colors hover:bg-tint/[0.03]">
@@ -261,6 +275,14 @@ export function EmployeesView() {
                 )}
               </tbody>
             </table>
+            <Pagination
+              page={toolsPagination.page}
+              pageCount={toolsPagination.pageCount}
+              pageSize={toolsPagination.pageSize}
+              totalRows={toolsPagination.totalRows}
+              onPageChange={toolsPagination.setPage}
+              onPageSizeChange={toolsPagination.setPageSize}
+            />
           </div>
         </div>
       )}

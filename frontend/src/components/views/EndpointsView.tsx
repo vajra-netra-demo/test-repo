@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
+import { Pagination } from "../Pagination";
+import { usePagination } from "../../hooks/usePagination";
 import type { EndpointDevice } from "../../types";
 
 export function EndpointsView() {
   const [devices, setDevices] = useState<EndpointDevice[] | null>(null);
   const [findingCounts, setFindingCounts] = useState<Record<string, number>>({});
   const [error, setError] = useState(false);
+  const { page, setPage, pageSize, setPageSize, pageCount, paged, totalRows } = usePagination(devices ?? []);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,7 +43,7 @@ export function EndpointsView() {
           agent/README.md to enroll a machine)
         </p>
       </div>
-      <div className="glass glass-hover rounded-xl p-5">
+      <div className="glass glass-hover overflow-hidden rounded-xl">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -64,7 +67,7 @@ export function EndpointsView() {
                 agent/README.md.
               </EmptyRow>
             ) : (
-              devices.map((d) => (
+              paged.map((d) => (
                 <tr key={d.id} className="transition-colors hover:bg-tint/[0.03]">
                   <Td>{d.hostname}</Td>
                   <Td>{d.os}</Td>
@@ -79,6 +82,14 @@ export function EndpointsView() {
             )}
           </tbody>
         </table>
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          totalRows={totalRows}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
     </div>
   );

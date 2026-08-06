@@ -3,6 +3,8 @@ import { api, ApiError } from "../../api/client";
 import type { ClassificationScan, ClassifyResult } from "../../types";
 import { useToast } from "../Toaster";
 import { RiskBadge } from "../Badge";
+import { Pagination } from "../Pagination";
+import { usePagination } from "../../hooks/usePagination";
 import type { RiskLevel } from "../../types";
 
 function sensitivityLevel(score: number): RiskLevel {
@@ -25,6 +27,7 @@ export function ClassifyView() {
   const [history, setHistory] = useState<ClassificationScan[] | null>(null);
   const [historyUnavailable, setHistoryUnavailable] = useState(false);
   const [historyError, setHistoryError] = useState(false);
+  const { page, setPage, pageSize, setPageSize, pageCount, paged, totalRows } = usePagination(history ?? []);
 
   async function loadHistory() {
     try {
@@ -123,7 +126,7 @@ export function ClassifyView() {
       </div>
 
       <div className="mb-3 mt-7 text-[13px] font-bold uppercase tracking-wide text-muted">Recent Scans</div>
-      <div className="glass glass-hover rounded-xl p-5">
+      <div className="glass glass-hover overflow-hidden rounded-xl">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -144,7 +147,7 @@ export function ClassifyView() {
             ) : history.length === 0 ? (
               <EmptyRow>No scans yet — classify some text above.</EmptyRow>
             ) : (
-              history.map((s) => {
+              paged.map((s) => {
                 const total = Object.values(s.entity_counts || {}).reduce((a, b) => a + b, 0);
                 const level = sensitivityLevel(s.sensitivity_score);
                 return (
@@ -165,6 +168,14 @@ export function ClassifyView() {
             )}
           </tbody>
         </table>
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          totalRows={totalRows}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import { ShieldOff, TriangleAlert, X } from "lucide-react";
 import type { SaaSTool, ToolSource } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { RiskBadge } from "../Badge";
+import { Pagination } from "../Pagination";
+import { usePagination } from "../../hooks/usePagination";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
 import { useToast } from "../Toaster";
@@ -68,6 +70,8 @@ export function ToolsTable({ tools, onReload, riskFilter, onClearRiskFilter }: T
     });
   }, [tools, filter, riskFilter, search, sortKey, sortDir]);
 
+  const { page, setPage, pageSize, setPageSize, pageCount, paged, totalRows } = usePagination(rows);
+
   function onSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === 1 ? -1 : 1) as 1 | -1);
     else {
@@ -111,39 +115,49 @@ export function ToolsTable({ tools, onReload, riskFilter, onClearRiskFilter }: T
         />
       </div>
 
-      <table className="glass w-full border-collapse overflow-hidden rounded-xl">
-        <thead>
-          <tr>
-            <SortableHeader label="Tool" sortKey="tool_name" active={sortKey} onSort={onSort} />
-            <SortableHeader label="Department" sortKey="department" active={sortKey} onSort={onSort} />
-            <SortableHeader label="Risk" sortKey="risk_score" active={sortKey} onSort={onSort} />
-            <SortableHeader label="Score" sortKey="risk_score" active={sortKey} onSort={onSort} />
-            <th className="border-b border-border bg-tint/[0.02] px-3.5 py-2.75 text-left text-[10.5px] font-bold uppercase tracking-wide text-muted">
-              Flags
-            </th>
-            <SortableHeader label="Triage Agent" sortKey="triage_decision" active={sortKey} onSort={onSort} />
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
+      <div className="glass overflow-hidden rounded-xl">
+        <table className="w-full border-collapse">
+          <thead>
             <tr>
-              <td colSpan={6} className="p-10 text-center text-muted">
-                No tools found.
-              </td>
+              <SortableHeader label="Tool" sortKey="tool_name" active={sortKey} onSort={onSort} />
+              <SortableHeader label="Department" sortKey="department" active={sortKey} onSort={onSort} />
+              <SortableHeader label="Risk" sortKey="risk_score" active={sortKey} onSort={onSort} />
+              <SortableHeader label="Score" sortKey="risk_score" active={sortKey} onSort={onSort} />
+              <th className="border-b border-border bg-tint/[0.02] px-3.5 py-2.75 text-left text-[10.5px] font-bold uppercase tracking-wide text-muted">
+                Flags
+              </th>
+              <SortableHeader label="Triage Agent" sortKey="triage_decision" active={sortKey} onSort={onSort} />
             </tr>
-          ) : (
-            rows.map((t) => (
-              <ToolRow
-                key={t.id}
-                tool={t}
-                expanded={expandedId === t.id}
-                onToggle={() => setExpandedId((id) => (id === t.id ? null : t.id))}
-                onReload={onReload}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-10 text-center text-muted">
+                  No tools found.
+                </td>
+              </tr>
+            ) : (
+              paged.map((t) => (
+                <ToolRow
+                  key={t.id}
+                  tool={t}
+                  expanded={expandedId === t.id}
+                  onToggle={() => setExpandedId((id) => (id === t.id ? null : t.id))}
+                  onReload={onReload}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          totalRows={totalRows}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useToast } from "../Toaster";
 import { Dropdown } from "../Dropdown";
 import { PasswordInput } from "../PasswordInput";
+import { Pagination } from "../Pagination";
+import { usePagination } from "../../hooks/usePagination";
 import type { AppUser, UserRole } from "../../types";
 
 const ROLE_OPTIONS = [
@@ -28,6 +30,7 @@ export function ManageUsersView() {
   const [role, setRole] = useState<UserRole>("viewer");
   const [creating, setCreating] = useState(false);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const { page, setPage, pageSize, setPageSize, pageCount, paged, totalRows } = usePagination(users ?? []);
 
   async function load() {
     try {
@@ -141,7 +144,7 @@ export function ManageUsersView() {
         </form>
       </div>
 
-      <div className="glass glass-hover rounded-xl p-5">
+      <div className="glass glass-hover overflow-hidden rounded-xl">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -161,7 +164,7 @@ export function ManageUsersView() {
             ) : users === null ? (
               <EmptyRow>Loading…</EmptyRow>
             ) : (
-              users.map((u) => {
+              paged.map((u) => {
                 const isSelf = u.username === session?.username;
                 return (
                   <tr key={u.username} className="transition-colors hover:bg-tint/[0.03]">
@@ -194,6 +197,14 @@ export function ManageUsersView() {
             )}
           </tbody>
         </table>
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          totalRows={totalRows}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
     </div>
   );

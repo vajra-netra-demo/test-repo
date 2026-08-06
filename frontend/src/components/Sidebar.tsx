@@ -46,7 +46,15 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
     // fills that fixed height rather than growing with the page and
     // scrolling away with it.
     <div
-      className={`relative flex h-full shrink-0 flex-col bg-gradient-to-b from-sidebar to-sidebar-end py-6 transition-[width] duration-200 ${
+      // z-20 (explicit, not just `relative`) — without it, this div has no
+      // z-index of its own, so the collapse handle's z-10 never actually
+      // gets compared against DashboardView's sticky top-of-screen header
+      // (also z-10): position:relative alone doesn't open a stacking
+      // context, so the button's z-index bubbles all the way up to the
+      // root, ties with the header's z-10, and loses the tie-break (the
+      // header comes later in DOM order) — the handle rendered as a faint
+      // ring behind the header's blurred glass instead of a solid button.
+      className={`relative z-20 flex h-full shrink-0 flex-col bg-gradient-to-b from-sidebar to-sidebar-end py-6 transition-[width] duration-200 ${
         collapsed ? "w-[76px]" : "w-[240px]"
       }`}
     >
