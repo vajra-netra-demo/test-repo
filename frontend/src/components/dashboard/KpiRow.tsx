@@ -87,7 +87,7 @@ function KpiCard({
     <button
       type="button"
       onClick={onClick}
-      title="Click to filter the tools table below"
+      title="Click to preview these tools"
       className={`glass glass-hover relative overflow-hidden rounded-xl p-4.5 px-5 text-left transition-all duration-200 hover:-translate-y-0.5 ${
         active ? `ring-2 ${ringClass}` : ""
       }`}

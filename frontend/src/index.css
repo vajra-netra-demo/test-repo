@@ -250,6 +250,23 @@ body {
   animation: live-pulse 2s ease-in-out infinite;
 }
 
+/* Modal panel entrance (Modal.tsx) — a slight scale+lift, distinct from
+   the flatter view-fade used for page-level transitions, so an overlay
+   dialog reads as "arriving toward you" rather than just fading in. */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-modal-in {
+  animation: modal-in 0.18s ease-out;
+}
+
 /* Indeterminate progress sweep (ScanProgressBanner) — a highlight band
    drifting left-to-right on loop, since there's no real percentage to
    show for a live scan's progress. */

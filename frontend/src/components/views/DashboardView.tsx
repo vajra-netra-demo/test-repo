@@ -15,6 +15,7 @@ import { DeptChart } from "../dashboard/DeptChart";
 import { RoiCalculator } from "../dashboard/RoiCalculator";
 import { AccessGraph } from "../dashboard/AccessGraph";
 import { GraphInsightsPanel } from "../dashboard/GraphInsightsPanel";
+import { RiskAlertsModal } from "../dashboard/RiskAlertsModal";
 import { ToolsTable } from "../dashboard/ToolsTable";
 import type { GraphInsights } from "../../types";
 
@@ -42,6 +43,7 @@ export function DashboardView() {
   const [graphInsights, setGraphInsights] = useState<GraphInsights | null>(null);
   const [graphInsightsLoading, setGraphInsightsLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
+  const [alertsModalFilter, setAlertsModalFilter] = useState<KpiFilter | null>(null);
   const toolsTableRef = useRef<HTMLDivElement>(null);
 
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -180,12 +182,21 @@ export function DashboardView() {
 
   const riskCounts = counts(tools);
 
-  function selectRiskFilter(filter: KpiFilter) {
+  // Clicking a KPI card opens the rich alerts-style preview (RiskAlertsModal)
+  // rather than jumping straight to the table below — it also quietly sets
+  // riskFilter so the table already reflects the chosen tier by the time
+  // the user gets there via "View in table".
+  function openRiskAlerts(filter: KpiFilter) {
     setRiskFilter(filter);
+    setAlertsModalFilter(filter);
+  }
+
+  function jumpToTable() {
+    setAlertsModalFilter(null);
     // The table is well below the fold at this point in the page (past the
-    // trend chart, ROI calculator, access graph) — scroll to it so clicking
-    // a KPI card actually shows the filtered result, not just changes state
-    // off-screen.
+    // trend chart, ROI calculator, access graph) — scroll to it so the
+    // modal's "View in table" button actually lands on the filtered
+    // result, not just changes state off-screen.
     toolsTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -221,8 +232,17 @@ export function DashboardView() {
         med={riskCounts.Medium}
         low={riskCounts.Low}
         activeFilter={riskFilter}
-        onFilterChange={selectRiskFilter}
+        onFilterChange={openRiskAlerts}
       />
+
+      {alertsModalFilter && (
+        <RiskAlertsModal
+          tools={tools}
+          filter={alertsModalFilter}
+          onClose={() => setAlertsModalFilter(null)}
+          onViewInTable={jumpToTable}
+        />
+      )}
 
       <SectionTitle>Risk Breakdown</SectionTitle>
       <div className="grid grid-cols-[260px_1fr] gap-4">
