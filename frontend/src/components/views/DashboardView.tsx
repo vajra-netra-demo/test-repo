@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../api/client";
+import { useAuth } from "../../auth/AuthProvider";
 import type { DiscoveryStatus, ReadinessHistoryPoint, RiskLevel, SaaSTool, TenantProfile } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { useToast } from "../Toaster";
@@ -24,6 +25,7 @@ function counts(tools: SaaSTool[]): Record<RiskLevel, number> {
 
 export function DashboardView() {
   const { showToast } = useToast();
+  const { isAdmin } = useAuth();
 
   const [status, setStatus] = useState<DiscoveryStatus | null>(null);
   const [statusError, setStatusError] = useState(false);
@@ -124,6 +126,24 @@ export function DashboardView() {
     }
   }
 
+  async function downloadCsv() {
+    try {
+      await api.downloadCsv(currentTenant || undefined);
+    } catch (e) {
+      const message = e instanceof ApiError ? e.message : String(e);
+      showToast(`CSV download failed: ${message}`, "error");
+    }
+  }
+
+  async function downloadEvidenceReport() {
+    try {
+      await api.downloadEvidenceReport(currentTenant || undefined);
+    } catch (e) {
+      const message = e instanceof ApiError ? e.message : String(e);
+      showToast(`Evidence report download failed: ${message}`, "error");
+    }
+  }
+
   const riskCounts = counts(tools);
 
   return (
@@ -132,9 +152,10 @@ export function DashboardView() {
         status={status}
         statusError={statusError}
         scanning={scanning}
+        canRunScan={isAdmin}
         onRunScan={runLiveScan}
-        onDownloadCsv={() => window.location.assign(api.csvExportUrl(currentTenant || undefined))}
-        onDownloadReport={() => window.location.assign(api.evidenceReportUrl(currentTenant || undefined))}
+        onDownloadCsv={downloadCsv}
+        onDownloadReport={downloadEvidenceReport}
       />
 
       <TenantBar profiles={tenantProfiles} currentTenant={currentTenant} onChange={setCurrentTenant} />

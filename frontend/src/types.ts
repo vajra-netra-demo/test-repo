@@ -7,6 +7,15 @@
 export type RiskLevel = "High" | "Medium" | "Low";
 export type ToolSource = "sample" | "live" | "endpoint";
 export type TriageDecision = "auto-fix" | "manual-review" | "ignore";
+export type UserRole = "admin" | "viewer";
+
+// POST /auth/login, GET /auth/me (backend/app/routers/auth.py)
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  username: string;
+  role: UserRole;
+}
 
 // SaaSToolOut (backend/app/schemas.py)
 export interface SaaSTool {

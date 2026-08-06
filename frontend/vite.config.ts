@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 // and backend/app/main.py) — proxy them to FastAPI in dev so the app can call
 // relative paths ("/tools", "/discovery/status", ...) exactly like production,
 // where the built frontend is served same-origin by FastAPI itself.
-const API_PREFIXES = ['/discovery', '/tools', '/classify', '/regulation', '/report', '/tenants']
+const API_PREFIXES = ['/discovery', '/tools', '/classify', '/regulation', '/report', '/tenants', '/auth']
 
 export default defineConfig({
   plugins: [react()],

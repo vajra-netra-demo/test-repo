@@ -3,6 +3,7 @@ import type {
   ClassificationScan,
   DiscoveryStatus,
   EndpointDevice,
+  LoginResponse,
   ReadinessHistoryPoint,
   RegulationSearchResult,
   SaaSTool,
@@ -43,11 +44,45 @@ export class ApiError extends Error {
   }
 }
 
+// Every route except /auth/login and /health now requires a bearer token
+// (backend/app/auth.py, merged from Dev). The token lives here + localStorage
+// rather than in AuthProvider's React state, so a plain fetch() elsewhere
+// (or a page that hasn't mounted the provider yet) still has access to it.
+const TOKEN_KEY = "netra-token";
+let authToken: string | null = localStorage.getItem(TOKEN_KEY);
+let onUnauthorized: (() => void) | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+export function getAuthToken() {
+  return authToken;
+}
+
+// AuthProvider registers itself here so a 401 from *any* call — not just
+// the ones AuthProvider makes directly — clears the session and bounces to
+// the login screen, matching Dev's "global fetch() wrapper ... bounces back
+// to login on any 401" behavior.
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    headers: {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(init?.headers ?? {}),
+    },
     ...init,
   });
+  if (res.status === 401 && path !== "/auth/login") {
+    setAuthToken(null);
+    onUnauthorized?.();
+  }
   if (!res.ok) {
     let detail: unknown;
     try {
@@ -62,7 +97,53 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// CSV/evidence-report downloads can't use window.location.assign anymore —
+// that can't carry an Authorization header, and these routes are now
+// behind auth. Fetch as a blob and save it via a throwaway <a download>
+// instead (same approach Dev's original static-HTML version switched to).
+async function downloadFile(path: string, fallbackFilename: string): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  });
+  if (res.status === 401) {
+    setAuthToken(null);
+    onUnauthorized?.();
+  }
+  if (!res.ok) {
+    let detail: unknown;
+    try {
+      detail = await res.json();
+    } catch {
+      /* body wasn't JSON */
+    }
+    const message = (detail as { detail?: string } | undefined)?.detail ?? `${res.status} ${res.statusText}`;
+    throw new ApiError(message, res.status, detail);
+  }
+
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+  const filename = filenameMatch?.[1] ?? fallbackFilename;
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export const api = {
+  // Auth
+  login: (username: string, password: string) =>
+    request<LoginResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    }),
+  me: () => request<LoginResponse>("/auth/me"),
+
   // Dashboard / discovery
   getStatus: () => request<DiscoveryStatus>("/discovery/status"),
   getScanProgress: () => request<ScanProgress>("/discovery/scan-progress"),
@@ -103,8 +184,11 @@ export const api = {
 
   // Reports
   getHistory: () => request<ReadinessHistoryPoint[]>("/report/history"),
-  evidenceReportUrl: (tenantId?: string) =>
-    `${API_BASE}/report/evidence${tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : ""}`,
-  csvExportUrl: (tenantId?: string) =>
-    `${API_BASE}/report/csv${tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : ""}`,
+  downloadEvidenceReport: (tenantId?: string) =>
+    downloadFile(
+      `/report/evidence${tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : ""}`,
+      "netra_evidence_report.docx",
+    ),
+  downloadCsv: (tenantId?: string) =>
+    downloadFile(`/report/csv${tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : ""}`, "netra_discovered_tools.csv"),
 };

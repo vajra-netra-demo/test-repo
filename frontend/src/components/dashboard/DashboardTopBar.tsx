@@ -6,6 +6,7 @@ interface DashboardTopBarProps {
   status: DiscoveryStatus | null;
   statusError: boolean;
   scanning: boolean;
+  canRunScan: boolean;
   onRunScan: () => void;
   onDownloadCsv: () => void;
   onDownloadReport: () => void;
@@ -15,6 +16,7 @@ export function DashboardTopBar({
   status,
   statusError,
   scanning,
+  canRunScan,
   onRunScan,
   onDownloadCsv,
   onDownloadReport,
@@ -45,7 +47,8 @@ export function DashboardTopBar({
           </button>
           <button
             onClick={onRunScan}
-            disabled={scanning || (status ? !status.live_scan_configured : false)}
+            disabled={scanning || !canRunScan || (status ? !status.live_scan_configured : false)}
+            title={canRunScan ? undefined : "Admin only"}
             className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-accent to-accent-dark px-4 py-2.25 text-[13px] font-semibold text-[#03151a] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-accent-glow active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-tint/10 disabled:bg-none disabled:text-faint disabled:shadow-none"
           >
             <RefreshCw size={14} strokeWidth={2.5} className={scanning ? "animate-spin" : ""} />

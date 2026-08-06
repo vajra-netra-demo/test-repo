@@ -4,6 +4,7 @@ import type { SaaSTool, ToolSource } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { RiskBadge } from "../Badge";
 import { api, ApiError } from "../../api/client";
+import { useAuth } from "../../auth/AuthProvider";
 import { useToast } from "../Toaster";
 
 type SortKey = "tool_name" | "department" | "risk_score" | "triage_decision";
@@ -162,6 +163,7 @@ function ToolRow({
   onReload: () => void | Promise<void>;
 }) {
   const { showToast } = useToast();
+  const { isAdmin } = useAuth();
   const [busy, setBusy] = useState(false);
   const level = riskLevel(tool.risk_score);
   const isGithubLive = tool.source === "live" && tool.id.startsWith("live-gh-");
@@ -272,8 +274,9 @@ function ToolRow({
                 e.stopPropagation();
                 toggleRemediated();
               }}
-              disabled={busy}
-              className={`mt-2 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.25 text-[12px] font-semibold transition-all duration-150 hover:-translate-y-0.5 disabled:opacity-60 ${
+              disabled={busy || !isAdmin}
+              title={isAdmin ? undefined : "Admin only"}
+              className={`mt-2 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.25 text-[12px] font-semibold transition-all duration-150 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 ${
                 tool.remediated
                   ? "border-low/30 bg-low-bg text-low-dark"
                   : "glass glass-hover text-text"
@@ -293,8 +296,9 @@ function ToolRow({
                   e.stopPropagation();
                   runAutoFix();
                 }}
-                disabled={busy}
-                className="ml-2 mt-2 inline-flex items-center gap-1.5 rounded-md border border-high/30 bg-high-bg px-3 py-1.25 text-[12px] font-semibold text-high-dark transition-all duration-150 hover:-translate-y-0.5 hover:bg-high hover:text-white hover:shadow-md disabled:opacity-60"
+                disabled={busy || !isAdmin}
+                title={isAdmin ? undefined : "Admin only"}
+                className="ml-2 mt-2 inline-flex items-center gap-1.5 rounded-md border border-high/30 bg-high-bg px-3 py-1.25 text-[12px] font-semibold text-high-dark transition-all duration-150 hover:-translate-y-0.5 hover:bg-high hover:text-white hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <TriangleAlert size={13} strokeWidth={2.25} /> Auto-Revoke Access on GitHub
               </button>
