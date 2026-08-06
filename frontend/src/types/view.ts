@@ -1,1 +1,1 @@
-export type ViewKey = "dashboard" | "endpoints" | "classify" | "regulation" | "users";
+export type ViewKey = "dashboard" | "endpoints" | "employees" | "classify" | "regulation" | "users";

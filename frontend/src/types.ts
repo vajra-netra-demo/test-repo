@@ -63,6 +63,27 @@ export interface EndpointDevice {
   agent_version?: string | null;
 }
 
+// GET /discovery/employees (backend/app/schemas.py EmployeeSummary)
+export interface EmployeeSummary {
+  employee: string;
+  department?: string | null;
+  device_count: number;
+  tool_count: number;
+  high_risk_count: number;
+  offboarded: boolean;
+  offboarded_date?: string | null;
+}
+
+// GET /discovery/employees/{employee}/profile (EmployeeProfile)
+export interface EmployeeProfile {
+  employee: string;
+  devices: EndpointDevice[];
+  tools: SaaSTool[];
+  offboarded: boolean;
+  offboarded_date?: string | null;
+  offboard_note?: string | null;
+}
+
 // ClassificationScanOut
 export interface ClassificationScan {
   id: number;

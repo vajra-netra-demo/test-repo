@@ -1,4 +1,4 @@
-import { LayoutDashboard, MonitorSmartphone, ScanSearch, Scale, ShieldCheck, Users } from "lucide-react";
+import { Contact, LayoutDashboard, MonitorSmartphone, ScanSearch, Scale, ShieldCheck, Users } from "lucide-react";
 import type { ComponentType } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import type { ViewKey } from "../types/view";
@@ -6,6 +6,7 @@ import type { ViewKey } from "../types/view";
 const NAV_ITEMS: Array<{ key: ViewKey; label: string; icon: ComponentType<{ size?: number; strokeWidth?: number }>; adminOnly?: boolean }> = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "endpoints", label: "Endpoint Devices", icon: MonitorSmartphone },
+  { key: "employees", label: "Employees", icon: Contact },
   { key: "classify", label: "Classify Text", icon: ScanSearch },
   { key: "regulation", label: "Regulation Search", icon: Scale },
   { key: "users", label: "Manage Users", icon: Users, adminOnly: true },

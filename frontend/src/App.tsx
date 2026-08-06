@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { LoginView } from "./components/views/LoginView";
 import { DashboardView } from "./components/views/DashboardView";
 import { EndpointsView } from "./components/views/EndpointsView";
+import { EmployeesView } from "./components/views/EmployeesView";
 import { ClassifyView } from "./components/views/ClassifyView";
 import { RegulationView } from "./components/views/RegulationView";
 import { ManageUsersView } from "./components/views/ManageUsersView";
@@ -55,6 +56,7 @@ function AppShell() {
           <div key={view} className="mx-auto max-w-[1180px] animate-view-fade">
             {view === "dashboard" && <DashboardView />}
             {view === "endpoints" && <EndpointsView />}
+            {view === "employees" && <EmployeesView />}
             {view === "classify" && <ClassifyView />}
             {view === "regulation" && <RegulationView />}
             {/* isAdmin re-checked here too, not just in Sidebar's nav-item

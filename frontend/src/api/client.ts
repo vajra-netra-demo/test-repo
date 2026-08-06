@@ -3,6 +3,8 @@ import type {
   ClassifyResult,
   ClassificationScan,
   DiscoveryStatus,
+  EmployeeProfile,
+  EmployeeSummary,
   EndpointDevice,
   LoginResponse,
   ReadinessHistoryPoint,
@@ -161,6 +163,19 @@ export const api = {
   getScanProgress: () => request<ScanProgress>("/discovery/scan-progress"),
   startLiveScan: () => request<{ status: string }>("/discovery/live-scan", { method: "POST" }),
   getEndpoints: () => request<EndpointDevice[]>("/discovery/endpoints"),
+
+  // Employees (per-employee drill-down + offboarding — derived entirely
+  // from EndpointDevice.employee, no separate employee directory exists)
+  getEmployees: () => request<EmployeeSummary[]>("/discovery/employees"),
+  getEmployeeProfile: (employee: string) =>
+    request<EmployeeProfile>(`/discovery/employees/${encodeURIComponent(employee)}/profile`),
+  offboardEmployee: (employee: string, note: string | null = null) =>
+    request<EmployeeProfile>(`/discovery/employees/${encodeURIComponent(employee)}/offboard`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
+    }),
+  undoOffboardEmployee: (employee: string) =>
+    request<EmployeeProfile>(`/discovery/employees/${encodeURIComponent(employee)}/offboard`, { method: "DELETE" }),
 
   // Tools
   getTools: (tenant?: string) =>
