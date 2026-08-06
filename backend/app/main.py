@@ -10,6 +10,7 @@ from app.config import ADMIN_PASSWORD, ADMIN_USERNAME
 from app.database import Base, SessionLocal, engine, ensure_new_columns
 from app.routers import auth, tools, report, discovery, tenants, endpoint, regulation
 from app.scheduler import start_scheduler
+from app.tasks import ensure_worker_running
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ def _on_startup():
     finally:
         db.close()
     start_scheduler()
+    ensure_worker_running()
 
 
 @app.get("/health")

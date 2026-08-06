@@ -26,14 +26,43 @@ sequential in-process loop in scan_pipeline.py runs completely unchanged.
 """
 
 import os
+import subprocess
+import sys
 
 from celery import Celery
 
 from app.config import CELERY_ENABLED, CELERY_BROKER_PATH
 
+_worker_process = None
+
 
 def is_configured() -> bool:
     return CELERY_ENABLED
+
+
+def ensure_worker_running():
+    """Starts a real Celery worker as a genuine separate OS process, once,
+    at app startup -- not a background thread inside this process. Celery's
+    worker start-up tries to install its own signal handlers, which Python
+    only allows from a process's *main* thread; a thread inside the FastAPI
+    process would crash on that. A subprocess has its own main thread, so
+    it can install its own handlers freely, while still sharing this
+    container's filesystem with the web process -- which is exactly what
+    the filesystem broker needs. No second Railway service required.
+
+    No-op if CELERY_ENABLED is unset, or if a worker was already started by
+    this process (avoids spawning duplicates on module re-import)."""
+    global _worker_process
+    if not CELERY_ENABLED or _worker_process is not None:
+        return
+
+    _worker_process = subprocess.Popen(
+        [
+            sys.executable, "-m", "celery", "-A", "app.tasks.celery_app", "worker",
+            "--pool=threads", "--concurrency=5", "--loglevel=info",
+        ],
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    )
 
 
 def _make_celery_app() -> Celery:
