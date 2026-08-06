@@ -273,30 +273,6 @@ body {
   animation: live-pulse 2s ease-in-out infinite;
 }
 
-/* ReadinessGauge's decorative halo — a slow, constant spin (the scroll-
-   driven tilt on top of this is a separate transform on its parent <g>,
-   composing rather than fighting this one). */
-@keyframes gauge-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-\[gauge-spin_16s_linear_infinite\] {
-  animation: gauge-spin 16s linear infinite;
-}
-
-/* ReadinessGauge's comet — a short bright dash orbiting the full ring
-   once per cycle. 282.74 = 2*pi*45 (the gauge's radius), hardcoded since
-   a CSS keyframe can't reference the component's computed circumference. */
-@keyframes gauge-comet {
-  to {
-    stroke-dashoffset: -282.74;
-  }
-}
-.animate-\[gauge-comet_2\.4s_linear_infinite\] {
-  animation: gauge-comet 2.4s linear infinite;
-}
-
 /* Modal panel entrance (Modal.tsx) — a slight scale+lift, distinct from
    the flatter view-fade used for page-level transitions, so an overlay
    dialog reads as "arriving toward you" rather than just fading in. */
