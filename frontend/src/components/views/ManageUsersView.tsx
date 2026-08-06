@@ -4,6 +4,7 @@ import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
 import { useToast } from "../Toaster";
 import { Dropdown } from "../Dropdown";
+import { PasswordInput } from "../PasswordInput";
 import type { AppUser, UserRole } from "../../types";
 
 const ROLE_OPTIONS = [
@@ -111,10 +112,9 @@ export function ManageUsersView() {
             <label htmlFor="newPassword" className="mb-1.5 block text-[12.5px] font-semibold text-text">
               Password
             </label>
-            <input
+            <PasswordInput
               id="newPassword"
               name="new-account-password"
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

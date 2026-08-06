@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import { ApiError } from "../../api/client";
+import { PasswordInput } from "../PasswordInput";
 
 export function LoginView() {
   const { login } = useAuth();
@@ -62,9 +63,8 @@ export function LoginView() {
             <label htmlFor="password" className="mb-1.5 block text-[12.5px] font-semibold text-text">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
