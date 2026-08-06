@@ -8,7 +8,7 @@ import { DashboardTopBar } from "../dashboard/DashboardTopBar";
 import { TenantBar } from "../dashboard/TenantBar";
 import { ReadinessGauge } from "../dashboard/ReadinessGauge";
 import { TrendChart } from "../dashboard/TrendChart";
-import { KpiRow } from "../dashboard/KpiRow";
+import { KpiRow, type KpiFilter } from "../dashboard/KpiRow";
 import { DonutChart } from "../dashboard/DonutChart";
 import { DeptChart } from "../dashboard/DeptChart";
 import { RoiCalculator } from "../dashboard/RoiCalculator";
@@ -36,6 +36,8 @@ export function DashboardView() {
 
   const [tools, setTools] = useState<SaaSTool[]>([]);
   const [history, setHistory] = useState<ReadinessHistoryPoint[]>([]);
+  const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
+  const toolsTableRef = useRef<HTMLDivElement>(null);
 
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -146,6 +148,15 @@ export function DashboardView() {
 
   const riskCounts = counts(tools);
 
+  function selectRiskFilter(filter: KpiFilter) {
+    setRiskFilter(filter);
+    // The table is well below the fold at this point in the page (past the
+    // trend chart, ROI calculator, access graph) — scroll to it so clicking
+    // a KPI card actually shows the filtered result, not just changes state
+    // off-screen.
+    toolsTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div>
       <DashboardTopBar
@@ -170,7 +181,14 @@ export function DashboardView() {
       <TrendChart history={history} />
 
       <SectionTitle>Risk Summary</SectionTitle>
-      <KpiRow total={tools.length} high={riskCounts.High} med={riskCounts.Medium} low={riskCounts.Low} />
+      <KpiRow
+        total={tools.length}
+        high={riskCounts.High}
+        med={riskCounts.Medium}
+        low={riskCounts.Low}
+        activeFilter={riskFilter}
+        onFilterChange={selectRiskFilter}
+      />
 
       <SectionTitle>Risk Breakdown</SectionTitle>
       <div className="grid grid-cols-[260px_1fr] gap-4">
@@ -184,8 +202,15 @@ export function DashboardView() {
       <SectionTitle>Access Graph — Data Categories &rarr; Risk Level</SectionTitle>
       <AccessGraph tools={tools} />
 
-      <SectionTitle>Discovered Tools</SectionTitle>
-      <ToolsTable tools={tools} onReload={reload} />
+      <div ref={toolsTableRef}>
+        <SectionTitle>Discovered Tools</SectionTitle>
+        <ToolsTable
+          tools={tools}
+          onReload={reload}
+          riskFilter={riskFilter}
+          onClearRiskFilter={() => setRiskFilter("all")}
+        />
+      </div>
     </div>
   );
 }

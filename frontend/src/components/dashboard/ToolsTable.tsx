@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { ShieldOff, TriangleAlert } from "lucide-react";
+import { ShieldOff, TriangleAlert, X } from "lucide-react";
 import type { SaaSTool, ToolSource } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { RiskBadge } from "../Badge";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
 import { useToast } from "../Toaster";
+import type { KpiFilter } from "./KpiRow";
 
 type SortKey = "tool_name" | "department" | "risk_score" | "triage_decision";
 type FilterTab = "all" | ToolSource;
@@ -25,9 +26,14 @@ const TRIAGE_CLASSES: Record<string, string> = {
 interface ToolsTableProps {
   tools: SaaSTool[];
   onReload: () => void | Promise<void>;
+  // Driven by the KPI cards above (Dashboard) — clicking "High risk" etc.
+  // filters this table down without touching the charts, which still
+  // reflect the full unfiltered set.
+  riskFilter: KpiFilter;
+  onClearRiskFilter: () => void;
 }
 
-export function ToolsTable({ tools, onReload }: ToolsTableProps) {
+export function ToolsTable({ tools, onReload, riskFilter, onClearRiskFilter }: ToolsTableProps) {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("risk_score");
@@ -36,6 +42,9 @@ export function ToolsTable({ tools, onReload }: ToolsTableProps) {
 
   const rows = useMemo(() => {
     let filtered = filter === "all" ? tools : tools.filter((t) => t.source === filter);
+    if (riskFilter !== "all") {
+      filtered = filtered.filter((t) => riskLevel(t.risk_score) === riskFilter);
+    }
 
     if (search) {
       const q = search.toLowerCase();
@@ -57,7 +66,7 @@ export function ToolsTable({ tools, onReload }: ToolsTableProps) {
       if (av === bv) return 0;
       return av > bv ? sortDir : -sortDir;
     });
-  }, [tools, filter, search, sortKey, sortDir]);
+  }, [tools, filter, riskFilter, search, sortKey, sortDir]);
 
   function onSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === 1 ? -1 : 1) as 1 | -1);
@@ -69,6 +78,17 @@ export function ToolsTable({ tools, onReload }: ToolsTableProps) {
 
   return (
     <div>
+      {riskFilter !== "all" && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent-light px-3.5 py-2 text-[12.5px] font-semibold text-accent">
+          Showing {riskFilter.toLowerCase()} risk tools only — from the KPI card above
+          <button
+            onClick={onClearRiskFilter}
+            className="ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] transition-colors hover:bg-tint/[0.08]"
+          >
+            <X size={12} strokeWidth={2.5} /> Clear
+          </button>
+        </div>
+      )}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1 rounded-lg bg-tint/[0.04] p-1">
           {TABS.map((tab) => (
