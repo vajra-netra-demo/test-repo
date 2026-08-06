@@ -14,7 +14,9 @@ import { DonutChart } from "../dashboard/DonutChart";
 import { DeptChart } from "../dashboard/DeptChart";
 import { RoiCalculator } from "../dashboard/RoiCalculator";
 import { AccessGraph } from "../dashboard/AccessGraph";
+import { GraphInsightsPanel } from "../dashboard/GraphInsightsPanel";
 import { ToolsTable } from "../dashboard/ToolsTable";
+import type { GraphInsights } from "../../types";
 
 function counts(tools: SaaSTool[]): Record<RiskLevel, number> {
   return {
@@ -37,6 +39,8 @@ export function DashboardView() {
 
   const [tools, setTools] = useState<SaaSTool[]>([]);
   const [history, setHistory] = useState<ReadinessHistoryPoint[]>([]);
+  const [graphInsights, setGraphInsights] = useState<GraphInsights | null>(null);
+  const [graphInsightsLoading, setGraphInsightsLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
   const toolsTableRef = useRef<HTMLDivElement>(null);
 
@@ -65,9 +69,22 @@ export function DashboardView() {
     }
   }, []);
 
+  const loadGraphInsights = useCallback(async (tenant: string) => {
+    setGraphInsightsLoading(true);
+    try {
+      setGraphInsights(await api.getGraphInsights(tenant || undefined));
+    } catch {
+      /* best-effort, same as the trend chart above — a graph-metrics hiccup
+         shouldn't block the rest of the dashboard from rendering */
+      setGraphInsights(null);
+    } finally {
+      setGraphInsightsLoading(false);
+    }
+  }, []);
+
   const reload = useCallback(async () => {
-    await Promise.all([loadTools(currentTenant), loadHistory()]);
-  }, [currentTenant, loadTools, loadHistory]);
+    await Promise.all([loadTools(currentTenant), loadHistory(), loadGraphInsights(currentTenant)]);
+  }, [currentTenant, loadTools, loadHistory, loadGraphInsights]);
 
   useEffect(() => {
     loadStatus();
@@ -89,7 +106,8 @@ export function DashboardView() {
 
   useEffect(() => {
     loadTools(currentTenant);
-  }, [currentTenant, loadTools]);
+    loadGraphInsights(currentTenant);
+  }, [currentTenant, loadTools, loadGraphInsights]);
 
   useEffect(() => {
     loadHistory();
@@ -217,6 +235,9 @@ export function DashboardView() {
 
       <SectionTitle>Access Graph — Data Categories &rarr; Risk Level</SectionTitle>
       <AccessGraph tools={tools} />
+
+      <SectionTitle>Graph Insights — Real Computed Metrics</SectionTitle>
+      <GraphInsightsPanel data={graphInsights} loading={graphInsightsLoading} />
 
       <div ref={toolsTableRef}>
         <SectionTitle>Discovered Tools</SectionTitle>

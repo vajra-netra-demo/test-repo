@@ -147,6 +147,24 @@ export interface RegulationSearchResult {
   results: RegulationClause[];
 }
 
+// GET /discovery/access-graph-insights (backend/app/graph_analysis.py
+// compute_graph_insights) — real NetworkX metrics over the dept/tool/
+// data-category graph, not illustrative counts.
+export interface GraphInsightTool {
+  tool_name: string;
+  score: number;
+  risk_score?: number | null;
+  departments_and_categories_touched: number;
+}
+export interface GraphInsights {
+  node_count: number;
+  edge_count: number;
+  connected_components: number;
+  largest_component_size: number;
+  most_central_tools: GraphInsightTool[];
+  bridge_tools: GraphInsightTool[];
+}
+
 // GET /report/history
 export interface ReadinessHistoryPoint {
   timestamp: string;

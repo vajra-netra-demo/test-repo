@@ -6,6 +6,7 @@ import type {
   EmployeeProfile,
   EmployeeSummary,
   EndpointDevice,
+  GraphInsights,
   LoginResponse,
   ReadinessHistoryPoint,
   RegulationSearchResult,
@@ -163,6 +164,8 @@ export const api = {
   getScanProgress: () => request<ScanProgress>("/discovery/scan-progress"),
   startLiveScan: () => request<{ status: string }>("/discovery/live-scan", { method: "POST" }),
   getEndpoints: () => request<EndpointDevice[]>("/discovery/endpoints"),
+  getGraphInsights: (tenant?: string) =>
+    request<GraphInsights>(`/discovery/access-graph-insights${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
 
   // Employees (per-employee drill-down + offboarding — derived entirely
   // from EndpointDevice.employee, no separate employee directory exists)
