@@ -30,6 +30,8 @@ class SaaSToolOut(BaseModel):
     endpoint_device_id: Optional[str] = None
     resolved_ip: Optional[str] = None
     hosting_region_source: str = "declared"
+    tls_issuer_org: Optional[str] = None
+    tls_subject_org: Optional[str] = None
 
 
 class RemediateRequest(BaseModel):
@@ -70,6 +72,29 @@ class EndpointDeviceOut(BaseModel):
     first_checkin: str
     last_checkin: str
     agent_version: Optional[str] = None
+
+
+class EmployeeSummary(BaseModel):
+    employee: str
+    department: Optional[str] = None
+    device_count: int
+    tool_count: int
+    high_risk_count: int
+    offboarded: bool = False
+    offboarded_date: Optional[str] = None
+
+
+class EmployeeProfile(BaseModel):
+    employee: str
+    devices: List[EndpointDeviceOut]
+    tools: List[SaaSToolOut]
+    offboarded: bool = False
+    offboarded_date: Optional[str] = None
+    offboard_note: Optional[str] = None
+
+
+class OffboardRequest(BaseModel):
+    note: Optional[str] = None
 
 
 class ClassifyTextRequest(BaseModel):

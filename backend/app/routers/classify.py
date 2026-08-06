@@ -14,12 +14,13 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.classification.presidio_engine import classify_text
 from app.database import get_db
 from app.models import ClassificationScan
 from app.schemas import ClassificationScanOut, ClassifyTextRequest
 
-router = APIRouter(prefix="/classify", tags=["classification"])
+router = APIRouter(prefix="/classify", tags=["classification"], dependencies=[Depends(get_current_user)])
 
 
 @router.post("/text")

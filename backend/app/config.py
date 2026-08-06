@@ -1,4 +1,6 @@
 import os
+import secrets
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -69,3 +71,32 @@ SENTINEL_STREAM_NAME = _env("SENTINEL_STREAM_NAME")
 SENTINEL_TENANT_ID = _env("SENTINEL_TENANT_ID")
 SENTINEL_CLIENT_ID = _env("SENTINEL_CLIENT_ID")
 SENTINEL_CLIENT_SECRET = _env("SENTINEL_CLIENT_SECRET")
+
+# Splunk HTTP Event Collector push connector (app/siem/splunk_connector.py)
+# — coded against Splunk's real, documented HEC API, but genuinely
+# unactivated: the team has no real Splunk instance/token to test against.
+# Left unconfigured (is_configured() returns False) until real access
+# exists, same status as manageengine_discovery.py / google_workspace_discovery.py.
+SPLUNK_HEC_URL = _env("SPLUNK_HEC_URL")
+SPLUNK_HEC_TOKEN = _env("SPLUNK_HEC_TOKEN")
+
+# Login/RBAC (app/auth.py). JWT_SECRET_KEY should be set explicitly in
+# production — an unset value falls back to a random key generated at
+# process start, which works fine for local dev but invalidates every
+# outstanding login on each restart/redeploy since the signature no longer
+# matches. ADMIN_PASSWORD must be set for the bootstrap admin account to be
+# created; if unset, no default user exists and login is simply unusable
+# until one is created directly in the database.
+JWT_SECRET_KEY = _env("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
+ADMIN_USERNAME = _env("ADMIN_USERNAME") or "admin"
+ADMIN_PASSWORD = _env("ADMIN_PASSWORD")
+
+# Real Celery task-queue integration (app/tasks.py) for parallelizing the
+# per-tool risk-assessment step across a genuine separate worker process —
+# see app/tasks.py's module docstring for why this uses Celery's filesystem
+# broker rather than a deployed Redis/RabbitMQ service. Optional: if unset,
+# the existing sequential in-process assessment loop runs exactly as before
+# (scan_pipeline.py), same "build now, activate later" pattern as every
+# other optional integration in this project.
+CELERY_ENABLED = _env("CELERY_ENABLED") == "1"
+CELERY_BROKER_PATH = _env("CELERY_BROKER_PATH") or "./celery_broker"

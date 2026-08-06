@@ -17,3 +17,36 @@ psycopg[binary]>=3.2
 # small pure-wheel install, safe to bundle by default. /regulation/search
 # has no ImportError fallback, unlike risk_engine.py's internal RAG call.
 scikit-learn>=1.4
+
+# Login/RBAC (app/auth.py) — pure Python, no native extension, deliberately
+# chosen over python-jose/passlib to avoid the native-dependency deploy
+# friction seen elsewhere in this project.
+pyjwt>=2.9
+
+# Sensitive-data classification (app/classification/) — real Presidio
+# pattern recognizers for PAN/Aadhaar/IFSC/GSTIN. The model is a direct
+# pip wheel (not "python -m spacy download", which needs a build step
+# Railway has no hook for), so this installs like any other package —
+# safe to bundle by default, unlike the presidio+spacy combo's earlier
+# history of being left out of the production build.
+presidio-analyzer==2.2.364
+spacy==3.8.13
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
+# In-process access-graph analysis (app/graph_analysis.py) — real degree/
+# betweenness centrality and connected-components over the department/tool/
+# data-category graph. Pure Python, no native extension, no separate
+# database service — deliberately NOT Neo4j (see app/graph_analysis.py for
+# why a deployed graph DB isn't worth the infra risk this close to a deadline).
+networkx>=3.2
+
+# Real Celery task-queue integration (app/tasks.py) for parallelizing
+# per-tool risk assessment across a genuine separate worker process. Uses
+# Celery's filesystem broker + a SQLAlchemy-backed result store — both
+# local-disk-based, no separate Redis/RabbitMQ service to provision. See
+# app/tasks.py for the honest limitation (filesystem transport needs a
+# shared filesystem between web and worker processes) and why that's an
+# acceptable tradeoff here but wouldn't be for multi-machine scaling.
+# Optional: unset CELERY_ENABLED and the existing sequential loop runs
+# exactly as before.
+celery>=5.4

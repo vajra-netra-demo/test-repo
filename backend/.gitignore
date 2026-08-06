@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 uvicorn.log
 output/
+celery_broker/
+control/
+*.pidbox.exchange
+*.exchange
