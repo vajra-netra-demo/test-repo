@@ -295,9 +295,38 @@ function ToolRow({
               <strong className="text-text">Data accessed:</strong> {(tool.data_categories_accessed || []).join(", ") || "—"}
             </div>
             <div>
-              <strong className="text-text">Hosting:</strong> {tool.hosting_region} ·{" "}
+              <strong className="text-text">Hosting:</strong> {tool.hosting_region}
+              {tool.hosting_region_source !== "declared" && (
+                <span
+                  className="ml-1.5 rounded px-1.5 py-0.25 text-[9.5px] font-bold uppercase tracking-wide text-faint"
+                  title={
+                    tool.hosting_region_source === "geoip-lookup"
+                      ? "Resolved via real DNS + GeoIP lookup against the vendor's actual domain — not a self-reported value. CDN-fronted domains geolocate to the nearest edge, not necessarily the vendor's true origin."
+                      : "DNS resolution or GeoIP lookup failed — hosting region is genuinely unknown, not guessed."
+                  }
+                >
+                  {tool.hosting_region_source === "geoip-lookup" ? "DNS/GeoIP" : "unresolved"}
+                </span>
+              )}
+              {" · "}
               <strong className="text-text">Last used:</strong> {tool.last_used}
             </div>
+            {tool.resolved_ip && (
+              <div className="mt-1">
+                <strong className="text-text">Resolved IP:</strong>{" "}
+                <span className="font-mono">{tool.resolved_ip}</span>
+              </div>
+            )}
+            {(tool.tls_issuer_org || tool.tls_subject_org) && (
+              <div className="mt-1">
+                <strong className="text-text">TLS certificate:</strong>{" "}
+                {tool.tls_subject_org
+                  ? `issued to ${tool.tls_subject_org}`
+                  : "no organization name on cert (common for Let's Encrypt/DV certs)"}
+                {tool.tls_issuer_org ? `, by ${tool.tls_issuer_org}` : ""} — a real TLS handshake, a second
+                independent network signal alongside DNS/GeoIP.
+              </div>
+            )}
             {tool.triage_reasoning && (
               <div className="mb-2.5 mt-2 rounded-md border-l-3 border-accent bg-accent-light p-2 px-3 text-[12.5px] text-accent">
                 <strong>Triage Agent ({tool.triage_decision}):</strong> {tool.triage_reasoning}

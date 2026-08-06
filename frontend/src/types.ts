@@ -47,8 +47,17 @@ export interface SaaSTool {
   triage_decision?: TriageDecision | null;
   triage_reasoning?: string | null;
   endpoint_device_id?: string | null;
+  // Real DNS resolution + GeoIP lookup, and a real TLS handshake reading the
+  // server's actual certificate (backend/app/network_intel.py) — populated
+  // only for live-discovered tools with a resolvable domain (GitHub App
+  // slugs etc.), never for the fictional sample dataset. hosting_region_source
+  // distinguishes a real network signal ("geoip-lookup") from a merely
+  // declared value ("declared") or a failed lookup ("unknown") — always show
+  // it alongside hosting_region, never present GeoIP as fact.
   resolved_ip?: string | null;
   hosting_region_source: string;
+  tls_issuer_org?: string | null;
+  tls_subject_org?: string | null;
 }
 
 // EndpointDeviceOut
