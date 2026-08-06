@@ -47,16 +47,18 @@ function AppShell() {
       <div className="h-full min-w-0 flex-1 overflow-y-auto">
         {/* Persistent header — stays at the top of the screen across
             every view (and while scrolling), rather than living at the
-            bottom of the sidebar where it's easy to miss. */}
-        <div className="sticky top-0 z-10 flex items-center justify-end gap-2.5 bg-bg/80 px-9 py-3 backdrop-blur-sm">
+            bottom of the sidebar where it's easy to miss. Kept as thin as
+            the toggle itself needs (py-1.5, not the old py-3) — this row's
+            only job is holding one small control, so it shouldn't push
+            every page's actual content down by more than that. */}
+        <div className="sticky top-0 z-10 flex items-center justify-end gap-2.5 bg-bg/80 px-9 py-1.5 backdrop-blur-sm">
           <ThemeToggle />
         </div>
-        {/* pt-6 gives real clearance below the sticky bar above — without
-            it, page content (e.g. the topbar buttons) starts flush
-            against the sticky bar's bottom edge, so any hover effect
-            that shifts content upward (hover:-translate-y-*) tucks a
-            sliver of it behind the sticky bar's higher z-index. */}
-        <div className="px-9 pb-7 pt-6">
+        {/* Small clearance below the sticky bar above — enough that a
+            hover effect shifting content upward (hover:-translate-y-*,
+            typically 2px) doesn't tuck a sliver behind the sticky bar's
+            higher z-index, without the old pt-6's much larger gap. */}
+        <div className="px-9 pb-7 pt-2.5">
           <div key={view} className="mx-auto max-w-[1180px] animate-view-fade">
             {view === "dashboard" && <DashboardView />}
             {view === "endpoints" && <EndpointsView />}
