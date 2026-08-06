@@ -1,12 +1,14 @@
-import { LayoutDashboard, MonitorSmartphone, ScanSearch, Scale, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, MonitorSmartphone, ScanSearch, Scale, ShieldCheck, Users } from "lucide-react";
 import type { ComponentType } from "react";
+import { useAuth } from "../auth/AuthProvider";
 import type { ViewKey } from "../types/view";
 
-const NAV_ITEMS: Array<{ key: ViewKey; label: string; icon: ComponentType<{ size?: number; strokeWidth?: number }> }> = [
+const NAV_ITEMS: Array<{ key: ViewKey; label: string; icon: ComponentType<{ size?: number; strokeWidth?: number }>; adminOnly?: boolean }> = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "endpoints", label: "Endpoint Devices", icon: MonitorSmartphone },
   { key: "classify", label: "Classify Text", icon: ScanSearch },
   { key: "regulation", label: "Regulation Search", icon: Scale },
+  { key: "users", label: "Manage Users", icon: Users, adminOnly: true },
 ];
 
 interface SidebarProps {
@@ -21,6 +23,9 @@ interface SidebarProps {
 // mistake is exactly how NETRA's wordmark went dark-text-on-dark-sidebar
 // illegible the first time this shipped with light mode.
 export function Sidebar({ active, onSelect }: SidebarProps) {
+  const { isAdmin } = useAuth();
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+
   return (
     <div className="relative flex w-[240px] shrink-0 flex-col bg-gradient-to-b from-sidebar to-sidebar-end py-6">
       {/* Signature edge — a thin cyan seam separating the sidebar from the
@@ -38,7 +43,7 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1 p-3 pt-4">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const isActive = active === item.key;
           const Icon = item.icon;
           return (

@@ -17,6 +17,12 @@ export interface LoginResponse {
   role: UserRole;
 }
 
+// GET/POST /auth/users (admin-only)
+export interface AppUser {
+  username: string;
+  role: UserRole;
+}
+
 // SaaSToolOut (backend/app/schemas.py)
 export interface SaaSTool {
   id: string;

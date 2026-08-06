@@ -1,4 +1,5 @@
 import type {
+  AppUser,
   ClassifyResult,
   ClassificationScan,
   DiscoveryStatus,
@@ -9,6 +10,7 @@ import type {
   SaaSTool,
   ScanProgress,
   TenantProfile,
+  UserRole,
 } from "../types";
 
 // Same "deploy standalone vs. served by FastAPI" logic as the original
@@ -143,6 +145,16 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
   me: () => request<LoginResponse>("/auth/me"),
+
+  // Account management (admin-only on the backend)
+  listUsers: () => request<AppUser[]>("/auth/users"),
+  createUser: (username: string, password: string, role: UserRole) =>
+    request<AppUser>("/auth/users", {
+      method: "POST",
+      body: JSON.stringify({ username, password, role }),
+    }),
+  deleteUser: (username: string) =>
+    request<{ deleted: string }>(`/auth/users/${encodeURIComponent(username)}`, { method: "DELETE" }),
 
   // Dashboard / discovery
   getStatus: () => request<DiscoveryStatus>("/discovery/status"),
