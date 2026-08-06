@@ -86,7 +86,10 @@
   --color-sidebar-good-bg: rgba(52, 211, 153, 0.14);
   --color-sidebar-good-text: #86ecc1;
 
-  --font-sans: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  /* Plus Jakarta Sans first — the typeface match for the reference admin-
+     dashboard template (Edura); the rest of the stack is the previous
+     fallback chain, kept as-is in case the webfont fails to load. */
+  --font-sans: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
@@ -113,13 +116,23 @@
  * uses the exact same class names as the rest of the app.
  */
 [data-theme="light"] {
+  /* Canvas + card colors below match the reference admin-dashboard
+     template (Edura): a soft lavender-gray canvas under clean, near-opaque
+     white cards with a visible soft shadow (added on .glass further down)
+     rather than this app's usual translucent-glass-over-canvas look — the
+     backdrop-filter blur on .glass still applies but has nothing left to
+     blur through a near-opaque card, which is intentional here. */
   --color-bg: #f4f6fb;
-  --color-bg-2: #e9edf5;
+  --color-bg-2: #eceff5;
 
-  --color-card: rgba(15, 23, 42, 0.03);
-  --color-card-hover: rgba(15, 23, 42, 0.055);
-  --color-border: rgba(15, 23, 42, 0.1);
-  --color-border-strong: rgba(15, 23, 42, 0.18);
+  --color-card: rgba(255, 255, 255, 0.9);
+  /* Fully opaque (vs. the base card's 0.9) — reads as the card "lifting" to
+     a crisper white on hover, the inverse of the old darker-tint-on-hover
+     logic that made sense when the card itself was a translucent dark
+     tint over the canvas rather than a near-opaque white one. */
+  --color-card-hover: #ffffff;
+  --color-border: rgba(15, 23, 42, 0.07);
+  --color-border-strong: rgba(15, 23, 42, 0.14);
   --color-popover: #ffffff;
 
   --color-tint: #0f172a;
@@ -198,12 +211,22 @@ body {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
 }
+/* Soft elevation shadow, light mode only — matches the reference template's
+   flat white cards floating on a soft-gray canvas via shadow rather than
+   the dark theme's glow-and-border-only depth cue (a shadow this visible
+   would just look muddy over the dark canvas, so it's not shared). */
+[data-theme="light"] .glass {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -8px rgba(16, 24, 40, 0.1);
+}
 .glass-hover {
   transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 .glass-hover:hover {
   background: var(--color-card-hover);
   border-color: var(--color-border-strong);
+}
+[data-theme="light"] .glass-hover:hover {
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.05), 0 12px 32px -8px rgba(16, 24, 40, 0.14);
 }
 
 /* Toast slide-in (Toaster.tsx) */
