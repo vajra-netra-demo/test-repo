@@ -121,7 +121,15 @@ export function ToolsTable({ tools, onReload, riskFilter, onClearRiskFilter }: T
             <tr>
               <SortableHeader label="Tool" sortKey="tool_name" active={sortKey} onSort={onSort} />
               <SortableHeader label="Department" sortKey="department" active={sortKey} onSort={onSort} />
-              <SortableHeader label="Risk" sortKey="risk_score" active={sortKey} onSort={onSort} />
+              {/* Not independently sortable — Risk level is just a bucketed
+                  view of Score (same underlying value), so it shares
+                  Score's sort rather than getting its own SortableHeader.
+                  Having both bound to the same sortKey previously made both
+                  headers light up as "active" at once, which read as a
+                  layout bug rather than two columns agreeing on one sort. */}
+              <th className="border-b border-border bg-tint/[0.02] px-3.5 py-2.75 text-left text-[10.5px] font-bold uppercase tracking-wide text-muted">
+                Risk
+              </th>
               <SortableHeader label="Score" sortKey="risk_score" active={sortKey} onSort={onSort} />
               <th className="border-b border-border bg-tint/[0.02] px-3.5 py-2.75 text-left text-[10.5px] font-bold uppercase tracking-wide text-muted">
                 Flags
