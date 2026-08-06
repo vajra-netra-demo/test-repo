@@ -18,7 +18,7 @@ export function TenantBar({ profiles, currentTenant, onChange }: TenantBarProps)
   return (
     <div className="mb-5">
       <div className="mb-3 flex flex-wrap items-center gap-3">
-        <Dropdown value={currentTenant} onChange={onChange} options={options} />
+        <Dropdown value={currentTenant} onChange={onChange} options={options} minWidth={420} />
       </div>
       {profile && (
         <div className="animate-view-fade rounded-xl border border-accent/30 bg-accent-light p-3.5 px-4.5">

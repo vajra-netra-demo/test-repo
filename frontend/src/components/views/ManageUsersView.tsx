@@ -3,7 +3,13 @@ import { Trash2, UserPlus } from "lucide-react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
 import { useToast } from "../Toaster";
+import { Dropdown } from "../Dropdown";
 import type { AppUser, UserRole } from "../../types";
+
+const ROLE_OPTIONS = [
+  { value: "viewer", label: "viewer" },
+  { value: "admin", label: "admin" },
+];
 
 // Admin-only (App.tsx only routes here for an admin; the backend enforces
 // the same via require_admin on every /auth/users route regardless). No
@@ -92,7 +98,9 @@ export function ManageUsersView() {
             </label>
             <input
               id="newUsername"
+              name="new-account-username"
               type="text"
+              autoComplete="off"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="glass w-[180px] rounded-lg px-3 py-2 text-[13px] text-text placeholder:text-faint transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
@@ -105,7 +113,9 @@ export function ManageUsersView() {
             </label>
             <input
               id="newPassword"
+              name="new-account-password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="glass w-[180px] rounded-lg px-3 py-2 text-[13px] text-text placeholder:text-faint transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
@@ -113,18 +123,13 @@ export function ManageUsersView() {
             />
           </div>
           <div>
-            <label htmlFor="newRole" className="mb-1.5 block text-[12.5px] font-semibold text-text">
-              Role
-            </label>
-            <select
-              id="newRole"
+            <label className="mb-1.5 block text-[12.5px] font-semibold text-text">Role</label>
+            <Dropdown
               value={role}
-              onChange={(e) => setRole(e.target.value as UserRole)}
-              className="glass rounded-lg px-3 py-2 text-[13px] text-text focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-            >
-              <option value="viewer">viewer</option>
-              <option value="admin">admin</option>
-            </select>
+              onChange={(v) => setRole(v as UserRole)}
+              options={ROLE_OPTIONS}
+              minWidth={120}
+            />
           </div>
           <button
             type="submit"

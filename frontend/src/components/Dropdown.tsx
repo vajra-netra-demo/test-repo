@@ -11,6 +11,11 @@ interface DropdownProps {
   onChange: (value: string) => void;
   options: DropdownOption[];
   className?: string;
+  // Px, not a Tailwind class — this varies a lot by use site (a tenant
+  // picker with long org names needs far more room than a 2-option Role
+  // field inline in a form row), so it's a plain style value rather than
+  // a hardcoded min-w-[...] baked into the component.
+  minWidth?: number;
 }
 
 // A native <select>'s open option list is rendered by the OS/browser, not
@@ -19,7 +24,7 @@ interface DropdownProps {
 // in. This is a fully custom dropdown (button + floating listbox we render
 // ourselves) so it can actually be styled, in both themes, like everything
 // else in the app.
-export function Dropdown({ value, onChange, options, className }: DropdownProps) {
+export function Dropdown({ value, onChange, options, className, minWidth = 160 }: DropdownProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const current = options.find((o) => o.value === value);
@@ -47,7 +52,8 @@ export function Dropdown({ value, onChange, options, className }: DropdownProps)
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="glass flex w-full min-w-[420px] cursor-pointer items-center justify-between gap-2 rounded-lg px-3.5 py-2.25 text-left text-[13px] font-semibold text-text transition-colors hover:border-accent/40 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+        style={{ minWidth }}
+        className="glass flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-3.5 py-2.25 text-left text-[13px] font-semibold text-text transition-colors hover:border-accent/40 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
       >
         <span className="truncate">{current?.label ?? ""}</span>
         <ChevronDown size={15} strokeWidth={2.25} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
@@ -59,7 +65,8 @@ export function Dropdown({ value, onChange, options, className }: DropdownProps)
         // behind it rather than blend with it like an in-flow glass panel.
         <ul
           role="listbox"
-          className="animate-view-fade absolute z-20 mt-1.5 max-h-72 w-full min-w-[420px] overflow-auto rounded-lg border border-border bg-popover py-1 shadow-xl"
+          style={{ minWidth }}
+          className="animate-view-fade absolute z-20 mt-1.5 max-h-72 w-full overflow-auto rounded-lg border border-border bg-popover py-1 shadow-xl"
         >
           {options.map((opt) => {
             const selected = opt.value === value;
