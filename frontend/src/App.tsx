@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { ToastProvider } from "./components/Toaster";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { UserMenu } from "./components/UserMenu";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { LoginView } from "./components/views/LoginView";
@@ -37,14 +36,19 @@ function AppShell() {
   }
 
   return (
-    <div className="app-canvas flex min-h-screen bg-bg">
+    // h-screen + overflow-hidden on the shell, with only the content pane
+    // below scrolling — the sidebar is a sibling flex item, not sticky/
+    // fixed itself, so it never moves: it simply never gets a scrollbar
+    // because it's exactly viewport-height. (It used to be min-h-screen,
+    // which let the whole page grow taller than the viewport and scrolled
+    // the sidebar away along with everything else.)
+    <div className="app-canvas flex h-screen overflow-hidden bg-bg">
       <Sidebar active={view} onSelect={setView} />
-      <div className="min-w-0 flex-1">
+      <div className="h-full min-w-0 flex-1 overflow-y-auto">
         {/* Persistent header — stays at the top of the screen across
             every view (and while scrolling), rather than living at the
             bottom of the sidebar where it's easy to miss. */}
         <div className="sticky top-0 z-10 flex items-center justify-end gap-2.5 bg-bg/80 px-9 py-3 backdrop-blur-sm">
-          <UserMenu />
           <ThemeToggle />
         </div>
         {/* pt-6 gives real clearance below the sticky bar above — without
