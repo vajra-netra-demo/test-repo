@@ -5,6 +5,7 @@ import type { DiscoveryStatus, ReadinessHistoryPoint, RiskLevel, SaaSTool, Tenan
 import { riskLevel } from "../../lib/risk";
 import { useToast } from "../Toaster";
 import { DashboardTopBar } from "../dashboard/DashboardTopBar";
+import { ScanProgressBanner } from "../dashboard/ScanProgressBanner";
 import { TenantBar } from "../dashboard/TenantBar";
 import { ReadinessGauge } from "../dashboard/ReadinessGauge";
 import { TrendChart } from "../dashboard/TrendChart";
@@ -71,6 +72,19 @@ export function DashboardView() {
   useEffect(() => {
     loadStatus();
     api.getTenants().then(setTenantProfiles).catch(() => {});
+    // Catches a scan already running when this page loads — e.g. started
+    // by the scheduler's auto re-scan, or from another browser tab — not
+    // just ones this session's own "Run Live Scan" click kicked off.
+    api
+      .getScanProgress()
+      .then((data) => {
+        if (data.running) {
+          setScanning(true);
+          pollScanProgress();
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadStatus]);
 
   useEffect(() => {
@@ -168,6 +182,8 @@ export function DashboardView() {
         onDownloadCsv={downloadCsv}
         onDownloadReport={downloadEvidenceReport}
       />
+
+      {scanning && <ScanProgressBanner />}
 
       <TenantBar profiles={tenantProfiles} currentTenant={currentTenant} onChange={setCurrentTenant} />
 

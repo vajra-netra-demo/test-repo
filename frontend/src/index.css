@@ -250,6 +250,21 @@ body {
   animation: live-pulse 2s ease-in-out infinite;
 }
 
+/* Indeterminate progress sweep (ScanProgressBanner) — a highlight band
+   drifting left-to-right on loop, since there's no real percentage to
+   show for a live scan's progress. */
+@keyframes scan-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+.animate-scan-sweep {
+  animation: scan-sweep 1.6s ease-in-out infinite;
+}
+
 /* Colored glow shadows keyed to the accent/status hues — used on
    interactive surfaces (primary buttons, active nav, the readiness ring),
    not on static decoration. Kept as fixed rgba (not theme tokens) since a
