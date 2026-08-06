@@ -1,5 +1,5 @@
-import { ArrowDownToLine, ShieldAlert, X } from "lucide-react";
-import type { SaaSTool } from "../../types";
+import { ArrowRight, ShieldAlert, X } from "lucide-react";
+import type { RiskLevel, SaaSTool } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { RiskBadge } from "../Badge";
 import { Modal } from "../Modal";
@@ -26,6 +26,17 @@ const ACCENT_BG: Record<KpiFilter, string> = {
   Low: "bg-low-bg",
 };
 
+// The left accent bar + score chip both key off the tier's solid/tint
+// pair — same two-tone pattern KpiRow.tsx uses for its cards, reused here
+// so a row reads as "the same risk tier" at a glance rather than
+// introducing a new visual language just for this modal.
+const BAR_CLASS: Record<RiskLevel, string> = { High: "bg-high", Medium: "bg-med", Low: "bg-low" };
+const CHIP_CLASS: Record<RiskLevel, string> = {
+  High: "bg-high-bg text-high-dark",
+  Medium: "bg-med-bg text-med-dark",
+  Low: "bg-low-bg text-low-dark",
+};
+
 // Opens from a Risk Summary KPI card (KpiRow.tsx) — a quick, richly laid
 // out preview of that risk tier's tools, rather than just jumping straight
 // to the full table below. "View in table" hands off to that table (with
@@ -47,7 +58,7 @@ export function RiskAlertsModal({
     .sort((a, b) => (b.risk_score ?? -1) - (a.risk_score ?? -1));
 
   return (
-    <Modal onClose={onClose} maxWidth={680}>
+    <Modal onClose={onClose} maxWidth={700}>
       <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-5">
         <div className="flex items-center gap-3">
           <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${ACCENT_BG[filter]} ${ACCENT_TEXT[filter]}`}>
@@ -69,45 +80,50 @@ export function RiskAlertsModal({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-tint/[0.01] p-4">
         {rows.length === 0 ? (
           <div className="p-10 text-center text-[13px] text-muted">
             No {filter === "all" ? "" : `${filter.toLowerCase()}-risk `}tools in this view.
           </div>
         ) : (
-          rows.map((t) => {
-            const level = riskLevel(t.risk_score);
-            return (
-              <div
-                key={t.id}
-                className="flex items-start justify-between gap-4 border-b border-border px-6 py-4 transition-colors last:border-0 hover:bg-tint/[0.025]"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    {level ? <RiskBadge level={level} /> : <span className="text-[11px] font-semibold text-faint">Unassessed</span>}
-                    <span className="truncate text-[14px] font-bold text-text">{t.tool_name}</span>
-                  </div>
-                  <div className="mb-1.5 text-[12px] text-muted">
-                    {t.department} &middot; {t.source}
-                    {t.vendor ? ` · ${t.vendor}` : ""}
-                  </div>
-                  <div
-                    className="text-[12.5px] leading-relaxed text-muted"
-                    style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2, overflow: "hidden" }}
-                  >
-                    {t.risk_reasoning ||
-                      (t.risk_flags && t.risk_flags.length > 0 ? t.risk_flags.join(", ") : "Not yet assessed.")}
+          <div className="flex flex-col gap-2.5">
+            {rows.map((t) => {
+              const level = riskLevel(t.risk_score);
+              return (
+                <div
+                  key={t.id}
+                  className="glass glass-hover relative overflow-hidden rounded-xl py-3.5 pl-5 pr-4"
+                >
+                  <div className={`absolute inset-y-0 left-0 w-[3px] ${level ? BAR_CLASS[level] : "bg-faint/40"}`} />
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        {level ? <RiskBadge level={level} /> : <span className="text-[11px] font-semibold text-faint">Unassessed</span>}
+                        <span className="truncate text-[14px] font-bold text-text">{t.tool_name}</span>
+                      </div>
+                      <div className="mb-1.5 text-[12px] text-muted">
+                        {t.department} &middot; {t.source}
+                        {t.vendor ? ` · ${t.vendor}` : ""}
+                      </div>
+                      <div
+                        className="text-[12.5px] leading-relaxed text-muted"
+                        style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2, overflow: "hidden" }}
+                      >
+                        {t.risk_reasoning ||
+                          (t.risk_flags && t.risk_flags.length > 0 ? t.risk_flags.join(", ") : "Not yet assessed.")}
+                      </div>
+                    </div>
+                    <div
+                      className={`flex shrink-0 flex-col items-center justify-center rounded-lg px-3.5 py-2 ${level ? CHIP_CLASS[level] : "bg-tint/[0.06] text-muted"}`}
+                    >
+                      <div className="font-mono text-[19px] font-bold tabular-nums leading-none">{t.risk_score ?? "—"}</div>
+                      <div className="mt-1 text-[9px] font-semibold uppercase tracking-wide opacity-75">score</div>
+                    </div>
                   </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  <div className={`font-mono text-[20px] font-bold tabular-nums ${level ? ACCENT_TEXT[level] : "text-faint"}`}>
-                    {t.risk_score ?? "—"}
-                  </div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-faint">risk score</div>
-                </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -115,9 +131,10 @@ export function RiskAlertsModal({
         <div className="text-[12px] text-muted">Full table below has search, sorting, and remediation actions.</div>
         <button
           onClick={onViewInTable}
+          title="Scroll to the Discovered Tools table below, filtered to this view"
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-b from-accent to-accent-dark px-4 py-2 text-[12.5px] font-semibold text-[#03151a] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-accent-glow active:translate-y-0"
         >
-          <ArrowDownToLine size={14} strokeWidth={2.25} /> View in table
+          View in table <ArrowRight size={14} strokeWidth={2.25} />
         </button>
       </div>
     </Modal>
