@@ -240,20 +240,37 @@ def submit(backend_url: str, token: str, report: dict, timeout: int = 30):
         return json.loads(resp.read().decode("utf-8"))
 
 
+# OS accounts that identify a shared/service session, not a real person.
+# Auto-detecting one of these as "employee" would be worse than leaving it
+# blank: every server logged in as the same generic account would collapse
+# into one bogus "employee" in the dashboard, merging unrelated machines'
+# findings together (EndpointDevice/employee lookups match on this string).
+_GENERIC_ACCOUNTS = {"administrator", "system", "root", "admin", "guest"}
+
+
+def _detect_employee():
+    username = getpass.getuser()
+    if username.lower() in _GENERIC_ACCOUNTS:
+        return None
+    return username
+
+
 def main():
     parser = argparse.ArgumentParser(description="NETRA read-only endpoint discovery agent")
     parser.add_argument("--backend-url", required=True, help="e.g. https://your-netra-host or http://127.0.0.1:8200")
     parser.add_argument("--token", required=True, help="Must match the backend's ENDPOINT_AGENT_TOKEN")
     parser.add_argument(
         "--employee", default=None,
-        help="Employee name/email this device belongs to. Same command works on every machine "
-             "unchanged: if omitted, the OS-logged-in username on THIS machine is used automatically.",
+        help="Employee name/email this device belongs to. Never required: if omitted, the "
+             "OS-logged-in username on THIS machine is used automatically (unless it's a "
+             "shared/generic account like Administrator, in which case it's left blank rather "
+             "than guessed). The identical command works unchanged on every machine.",
     )
     parser.add_argument("--department", default=None)
     parser.add_argument("--dry-run", action="store_true", help="Scan and print the report without submitting it")
     args = parser.parse_args()
 
-    employee = args.employee or getpass.getuser()
+    employee = args.employee or _detect_employee()
     report = build_report(employee, args.department)
 
     if args.dry_run:

@@ -37,10 +37,13 @@ from whichever machine it runs on.
    python netra_agent.py --backend-url http://127.0.0.1:8200 --token <your-token>
    ```
    `--employee` is optional — if you don't pass it, the agent uses the
-   OS-logged-in username on that machine automatically. That's the point:
-   **the exact same command/task can be copied to every machine unchanged**
-   — nobody has to edit a name into it per-device. Pass `--employee "Name"`
-   only if the OS username isn't a good label (e.g. a shared/service account).
+   OS-logged-in username on that machine automatically, unless that's a
+   shared/generic account (`Administrator`, `SYSTEM`, `root`, ...), in which
+   case it's left blank rather than guessed — that avoids every server
+   logged in as the same generic account colliding into one bogus "employee"
+   in the dashboard. Either way, **the exact same command/scheduled task can
+   be copied to every machine unchanged** — nobody ever has to type a name
+   into it.
    Add `--dry-run` first if you just want to see what it would report
    without submitting anything.
 3. Schedule it to run automatically — use the identical command on every
