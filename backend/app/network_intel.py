@@ -43,6 +43,15 @@ import urllib.request
 
 CANDIDATE_TLDS = ["io", "app", "com", "net", "dev", "ai"]
 
+# Placeholder values a discovery provider uses when it genuinely doesn't
+# know the vendor (e.g. Microsoft Graph's publisherName can be empty) —
+# NOT a real vendor name to guess a domain for. Found the hard way:
+# "unknown.io" is a real, registered (unrelated, parked) domain, so without
+# this guard the resolver confidently reports a real-looking but completely
+# meaningless hosting region/certificate for any tool whose vendor is
+# simply unknown.
+_PLACEHOLDER_VENDORS = {"unknown", "n/a", "none", ""}
+
 
 def _cert_name_field(name_tuples, field):
     """A cert's subject/issuer is a tuple of tuples of single-item tuples,
@@ -122,6 +131,10 @@ def resolve_hosting_region(vendor_or_slug: str) -> dict:
     (self-signed/expired certs, TLS not offered, firewalled, etc.) — fails
     closed like everything else here.
     """
+    if (vendor_or_slug or "").strip().lower() in _PLACEHOLDER_VENDORS:
+        return {"hosting_region": "Unknown", "resolved_ip": None, "hosting_region_source": "unknown",
+                "tls_issuer_org": None, "tls_subject_org": None}
+
     for domain in _guess_domain_candidates(vendor_or_slug.lower()):
         ip = _resolve_ip(domain)
         if not ip:
