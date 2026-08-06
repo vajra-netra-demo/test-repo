@@ -125,8 +125,12 @@
   --color-tint: #0f172a;
 
   --color-text: #182035;
-  --color-muted: #6b7280;
-  --color-faint: #9199ac;
+  /* Darker than Tailwind's usual gray-500 — that measures ~4.5:1 against
+     this canvas, right at the WCAG AA floor, and reads as washed out at
+     the 12-13px sizes this app uses for most secondary text (subtitles,
+     table headers, status pills). ~7:1 here instead. */
+  --color-muted: #475569;
+  --color-faint: #6b7688;
 
   --color-accent: #0891b2;
   --color-accent-dark: #0e7490;

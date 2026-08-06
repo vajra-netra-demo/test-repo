@@ -26,7 +26,7 @@ export const RISK_GLOW: Record<RiskLevel, string> = {
 // line/node color) that also needs a literal per-theme value for SVG.
 const CHART_INK_BY_THEME: Record<Theme, { ink: string; muted: string; track: string; ring: string; accent: string }> = {
   dark: { ink: "#e7ecf6", muted: "#8b96ad", track: "rgba(255,255,255,0.08)", ring: "#0a0f1c", accent: "#22d3ee" },
-  light: { ink: "#182035", muted: "#6b7280", track: "rgba(15,23,42,0.08)", ring: "#f4f6fb", accent: "#0891b2" },
+  light: { ink: "#182035", muted: "#475569", track: "rgba(15,23,42,0.08)", ring: "#f4f6fb", accent: "#0891b2" },
 };
 
 export function riskColors(theme: Theme) {
