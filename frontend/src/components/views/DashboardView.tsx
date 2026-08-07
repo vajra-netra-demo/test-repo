@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
-import type { DiscoveryStatus, ReadinessHistoryPoint, RiskLevel, SaaSTool, TenantProfile } from "../../types";
+import type {
+  DiscoveryStatus,
+  ReadinessHistoryPoint,
+  RiskLevel,
+  SaaSTool,
+  ScanProgress,
+  TenantProfile,
+} from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { useToast } from "../Toaster";
 import { DashboardTopBar } from "../dashboard/DashboardTopBar";
@@ -34,6 +41,8 @@ export function DashboardView() {
   const [status, setStatus] = useState<DiscoveryStatus | null>(null);
   const [statusError, setStatusError] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const [tenantProfiles, setTenantProfiles] = useState<TenantProfile[]>([]);
   const [currentTenant, setCurrentTenant] = useState("");
@@ -99,6 +108,7 @@ export function DashboardView() {
       .then((data) => {
         if (data.running) {
           setScanning(true);
+          setScanProgress(data);
           pollScanProgress();
         }
       })
@@ -128,12 +138,22 @@ export function DashboardView() {
         pollTimer.current = setTimeout(check, 5000);
         return;
       }
+      setScanProgress(data);
       if (data.running) {
-        pollTimer.current = setTimeout(check, 4000);
+        // Faster cadence than the old 4s poll: with real phase/processed/
+        // total data now available, a tighter loop makes the progress feel
+        // live instead of visibly stepping every few seconds.
+        pollTimer.current = setTimeout(check, 1200);
         return;
       }
       setScanning(false);
-      if (data.last_error) {
+      setCancelling(false);
+      if (data.cancelled) {
+        showToast(
+          `Scan stopped — ${data.processed ?? 0}/${data.total ?? "?"} tools were assessed before stopping, kept as-is.`,
+          "info",
+        );
+      } else if (data.last_error) {
         showToast(`Live scan failed: ${data.last_error}`, "error");
       } else if (data.last_result) {
         showToast(
@@ -148,6 +168,7 @@ export function DashboardView() {
 
   async function runLiveScan() {
     setScanning(true);
+    setScanProgress(null);
     try {
       await api.startLiveScan();
       showToast(
@@ -159,6 +180,17 @@ export function DashboardView() {
       const message = e instanceof ApiError ? e.message : String(e);
       showToast(`Live scan failed: ${message}`, "error");
       setScanning(false);
+    }
+  }
+
+  async function cancelScan() {
+    setCancelling(true);
+    try {
+      await api.cancelScan();
+    } catch (e) {
+      const message = e instanceof ApiError ? e.message : String(e);
+      showToast(`Stop request failed: ${message}`, "error");
+      setCancelling(false);
     }
   }
 
@@ -212,7 +244,9 @@ export function DashboardView() {
         onDownloadReport={downloadEvidenceReport}
       />
 
-      {scanning && <ScanProgressBanner />}
+      {scanning && (
+        <ScanProgressBanner progress={scanProgress} onCancel={cancelScan} cancelling={cancelling} />
+      )}
 
       <TenantBar profiles={tenantProfiles} currentTenant={currentTenant} onChange={setCurrentTenant} />
 

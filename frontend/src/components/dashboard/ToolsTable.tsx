@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ShieldOff, TriangleAlert, X } from "lucide-react";
-import type { SaaSTool, ToolSource } from "../../types";
+import type { AttackTechnique, SaaSTool, ToolSource } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { RiskBadge } from "../Badge";
 import { Pagination } from "../Pagination";
@@ -210,6 +210,23 @@ function ToolRow({
   const level = riskLevel(tool.risk_score);
   const isGithubLive = tool.source === "live" && tool.id.startsWith("live-gh-");
 
+  const hasFlags = (tool.risk_flags?.length ?? 0) > 0;
+  const [techniques, setTechniques] = useState<AttackTechnique[] | null>(null);
+  const [techniquesLoading, setTechniquesLoading] = useState(false);
+  const [techniquesFailed, setTechniquesFailed] = useState(false);
+
+  // Lazy-loaded on first expand, same as the vanilla dashboard's version —
+  // no point fetching a mapping for a row nobody opens.
+  useEffect(() => {
+    if (!expanded || !hasFlags || techniques !== null || techniquesLoading || techniquesFailed) return;
+    setTechniquesLoading(true);
+    api
+      .getAttackMapping(tool.id)
+      .then((data) => setTechniques(data.techniques))
+      .catch(() => setTechniquesFailed(true))
+      .finally(() => setTechniquesLoading(false));
+  }, [expanded, hasFlags, tool.id, techniques, techniquesLoading, techniquesFailed]);
+
   async function toggleRemediated() {
     setBusy(true);
     try {
@@ -338,6 +355,28 @@ function ToolRow({
             {tool.triage_reasoning && (
               <div className="mb-2.5 mt-2 rounded-md border-l-3 border-accent bg-accent-light p-2 px-3 text-[12.5px] text-accent">
                 <strong>Triage Agent ({tool.triage_decision}):</strong> {tool.triage_reasoning}
+              </div>
+            )}
+            {hasFlags && (
+              <div className="mb-2.5 mt-2 border-t border-dashed border-border pt-2">
+                <div className="mb-1.5">
+                  <strong className="text-text">MITRE ATT&amp;CK mapping</strong>{" "}
+                  <span className="text-[11px] text-faint">
+                    (real rule-mapping from this finding's flags — not a simulated attack)
+                  </span>
+                </div>
+                {techniquesLoading && <div className="text-[11.5px] text-faint">Loading…</div>}
+                {techniquesFailed && <div className="text-[11.5px] text-faint">Mapping unavailable.</div>}
+                {techniques?.map((tech) => (
+                  <div
+                    key={tech.technique_id}
+                    className="mb-1.5 max-w-full rounded-md border border-high/25 bg-high-bg/40 px-2.5 py-1.5 text-[11.5px]"
+                  >
+                    <span className="mr-1.5 font-extrabold text-high-dark">{tech.technique_id}</span>
+                    <span className="font-semibold text-text">{tech.technique_name}</span> — {tech.tactic}
+                    <div className="mt-0.75 text-faint">{tech.rationale}</div>
+                  </div>
+                ))}
               </div>
             )}
             <button

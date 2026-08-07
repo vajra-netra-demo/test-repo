@@ -1,5 +1,6 @@
 import type {
   AppUser,
+  AttackMapping,
   ClassifyResult,
   ClassificationScan,
   DiscoveryStatus,
@@ -163,6 +164,7 @@ export const api = {
   getStatus: () => request<DiscoveryStatus>("/discovery/status"),
   getScanProgress: () => request<ScanProgress>("/discovery/scan-progress"),
   startLiveScan: () => request<{ status: string }>("/discovery/live-scan", { method: "POST" }),
+  cancelScan: () => request<{ status: string }>("/discovery/scan-cancel", { method: "POST" }),
   getEndpoints: () => request<EndpointDevice[]>("/discovery/endpoints"),
   getGraphInsights: (tenant?: string) =>
     request<GraphInsights>(`/discovery/access-graph-insights${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
@@ -193,6 +195,7 @@ export const api = {
       `/tools/${encodeURIComponent(id)}/auto-fix`,
       { method: "POST" },
     ),
+  getAttackMapping: (id: string) => request<AttackMapping>(`/tools/${encodeURIComponent(id)}/attack-mapping`),
 
   // Tenants
   getTenants: () => request<TenantProfile[]>("/tenants"),

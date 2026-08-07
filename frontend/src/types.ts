@@ -130,6 +130,27 @@ export interface ScanProgress {
   running: boolean;
   last_error?: string | null;
   last_result?: { live_ingested: number; readiness_score: number } | null;
+  phase?: string;
+  processed?: number;
+  total?: number;
+  current_tool?: string | null;
+  cancelled?: boolean;
+}
+
+// GET /tools/{id}/attack-mapping
+export interface AttackTechnique {
+  technique_id: string;
+  technique_name: string;
+  tactic: string;
+  rationale: string;
+  matched_flag: string | null;
+}
+
+export interface AttackMapping {
+  tool_id: string;
+  tool_name: string;
+  risk_flags: string[];
+  techniques: AttackTechnique[];
 }
 
 // GET /tenants — data/customer_profiles.json "profiles" entries
