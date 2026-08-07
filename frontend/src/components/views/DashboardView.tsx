@@ -16,9 +16,10 @@ import { DeptChart } from "../dashboard/DeptChart";
 import { RoiCalculator } from "../dashboard/RoiCalculator";
 import { AccessGraph } from "../dashboard/AccessGraph";
 import { GraphInsightsPanel } from "../dashboard/GraphInsightsPanel";
+import { AttackPathPanel } from "../dashboard/AttackPathPanel";
 import { RiskAlertsModal } from "../dashboard/RiskAlertsModal";
 import { ToolsTable } from "../dashboard/ToolsTable";
-import type { GraphInsights } from "../../types";
+import type { AttackPaths, GraphInsights } from "../../types";
 
 function counts(tools: SaaSTool[]): Record<RiskLevel, number> {
   return {
@@ -44,6 +45,8 @@ export function DashboardView() {
   const [history, setHistory] = useState<ReadinessHistoryPoint[]>([]);
   const [graphInsights, setGraphInsights] = useState<GraphInsights | null>(null);
   const [graphInsightsLoading, setGraphInsightsLoading] = useState(true);
+  const [attackPaths, setAttackPaths] = useState<AttackPaths | null>(null);
+  const [attackPathsLoading, setAttackPathsLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
   const [alertsModalFilter, setAlertsModalFilter] = useState<KpiFilter | null>(null);
   const toolsTableRef = useRef<HTMLDivElement>(null);
@@ -86,9 +89,26 @@ export function DashboardView() {
     }
   }, []);
 
+  const loadAttackPaths = useCallback(async (tenant: string) => {
+    setAttackPathsLoading(true);
+    try {
+      setAttackPaths(await api.getAttackPaths(tenant || undefined));
+    } catch {
+      /* best-effort, same as graph insights above */
+      setAttackPaths(null);
+    } finally {
+      setAttackPathsLoading(false);
+    }
+  }, []);
+
   const reload = useCallback(async () => {
-    await Promise.all([loadTools(currentTenant), loadHistory(), loadGraphInsights(currentTenant)]);
-  }, [currentTenant, loadTools, loadHistory, loadGraphInsights]);
+    await Promise.all([
+      loadTools(currentTenant),
+      loadHistory(),
+      loadGraphInsights(currentTenant),
+      loadAttackPaths(currentTenant),
+    ]);
+  }, [currentTenant, loadTools, loadHistory, loadGraphInsights, loadAttackPaths]);
 
   useEffect(() => {
     loadStatus();
@@ -103,6 +123,12 @@ export function DashboardView() {
           setScanning(true);
           setScanProgress(data);
           pollScanProgress();
+        } else {
+          // No reload() here — the other mount-time effects (loadTools,
+          // loadHistory, etc.) already fetch fresh data on this same
+          // mount; this just surfaces the toast for a completion that
+          // may otherwise have gone unseen. See notifyScanResult below.
+          notifyScanResult(data);
         }
       })
       .catch(() => {});
@@ -112,7 +138,8 @@ export function DashboardView() {
   useEffect(() => {
     loadTools(currentTenant);
     loadGraphInsights(currentTenant);
-  }, [currentTenant, loadTools, loadGraphInsights]);
+    loadAttackPaths(currentTenant);
+  }, [currentTenant, loadTools, loadGraphInsights, loadAttackPaths]);
 
   useEffect(() => {
     loadHistory();
@@ -121,6 +148,30 @@ export function DashboardView() {
   useEffect(() => () => {
     if (pollTimer.current) clearTimeout(pollTimer.current);
   }, []);
+
+  // Dedups by finished_at so the same completed scan doesn't re-toast
+  // every time this page mounts/reloads — persisted to localStorage so a
+  // page reload doesn't reset the "already told the user about this one"
+  // memory. Needed because a scan can finish while nobody's actively
+  // polling (tab reloaded, or DashboardView unmounted from a sidebar nav
+  // and remounted after a long real scan — e.g. Celery-parallelized
+  // across hundreds of tools — completed in the background); without
+  // this, that completion was silently swallowed.
+  const LAST_NOTIFIED_SCAN_KEY = "netra-last-scan-notified";
+  function notifyScanResult(data: ScanProgress) {
+    if (data.finished_at) {
+      if (localStorage.getItem(LAST_NOTIFIED_SCAN_KEY) === data.finished_at) return;
+      localStorage.setItem(LAST_NOTIFIED_SCAN_KEY, data.finished_at);
+    }
+    if (data.last_error) {
+      showToast(`Live scan failed: ${data.last_error}`, "error");
+    } else if (data.last_result) {
+      showToast(
+        `Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`,
+        "success",
+      );
+    }
+  }
 
   function pollScanProgress() {
     const check = async () => {
@@ -142,14 +193,7 @@ export function DashboardView() {
       }
       setScanning(false);
       setScanProgress(null);
-      if (data.last_error) {
-        showToast(`Live scan failed: ${data.last_error}`, "error");
-      } else if (data.last_result) {
-        showToast(
-          `Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`,
-          "success",
-        );
-      }
+      notifyScanResult(data);
       reload();
     };
     check();
@@ -275,6 +319,9 @@ export function DashboardView() {
 
       <SectionTitle>Graph Insights — Real Computed Metrics</SectionTitle>
       <GraphInsightsPanel data={graphInsights} loading={graphInsightsLoading} />
+
+      <SectionTitle>Attack Paths — Structural Reachability</SectionTitle>
+      <AttackPathPanel data={attackPaths} loading={attackPathsLoading} />
 
       <div ref={toolsTableRef}>
         <SectionTitle>Discovered Tools</SectionTitle>

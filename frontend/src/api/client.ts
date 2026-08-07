@@ -4,6 +4,7 @@ import type {
   ClassifyResult,
   ClassificationScan,
   DiscoveryStatus,
+  AttackPaths,
   EmployeeProfile,
   EmployeeSummary,
   EndpointDevice,
@@ -167,6 +168,8 @@ export const api = {
   getEndpoints: () => request<EndpointDevice[]>("/discovery/endpoints"),
   getGraphInsights: (tenant?: string) =>
     request<GraphInsights>(`/discovery/access-graph-insights${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
+  getAttackPaths: (tenant?: string) =>
+    request<AttackPaths>(`/discovery/attack-paths${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
 
   // Employees (per-employee drill-down + offboarding — derived entirely
   // from EndpointDevice.employee, no separate employee directory exists)

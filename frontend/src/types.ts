@@ -130,12 +130,14 @@ export type ScanPhase = "idle" | "starting" | "discovering" | "assessing";
 export interface ScanProgress {
   running: boolean;
   // Real per-tool progress (backend/app/scan_pipeline.py's on_progress
-  // callback) — current/total are 0 whenever the count for the current
-  // phase isn't known yet (e.g. "starting", or the Celery parallel path,
-  // which has no in-process counter to report from).
+  // callback, including the Celery parallel path via GroupResult.
+  // completed_count()) — current/total are 0 only during "starting",
+  // before the tool list itself is known.
   phase?: ScanPhase;
   current?: number;
   total?: number;
+  started_at?: string | null;
+  finished_at?: string | null;
   last_error?: string | null;
   last_result?: { live_ingested: number; readiness_score: number } | null;
 }
@@ -196,6 +198,24 @@ export interface GraphInsights {
   largest_component_size: number;
   most_central_tools: GraphInsightTool[];
   bridge_tools: GraphInsightTool[];
+}
+
+// GET /discovery/attack-paths (backend/app/graph_analysis.py
+// compute_attack_paths) — real 2-hop graph traversal from each High-risk
+// tool to other tools sharing its department or data category. Structural
+// reachability grounded in real discovered data, not a simulated attack.
+export interface AttackPath {
+  from_tool: string;
+  from_risk_score: number | null;
+  to_tool: string;
+  to_risk_score: number | null;
+  via_kind: "department" | "data_category";
+  via_name: string;
+}
+export interface AttackPaths {
+  high_risk_source_count: number;
+  paths: AttackPath[];
+  total_paths_found: number;
 }
 
 // GET /report/history
