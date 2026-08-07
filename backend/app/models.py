@@ -55,6 +55,13 @@ class SaaSTool(Base):
     risk_flags = Column(JSON, nullable=True)
     risk_reasoning = Column(Text, nullable=True)
 
+    # Captured by scan_pipeline.py/tasks.py right before risk_score is
+    # overwritten on each reassessment -- lets /discovery/risk-changes
+    # surface "this tool's risk moved since the last scan" without a
+    # separate history table. Null for a tool that's never been
+    # reassessed a second time yet (nothing to compare against).
+    previous_risk_score = Column(Integer, nullable=True)
+
     # Set via PATCH /tools/{id}/remediate once someone has acted on a finding.
     # A remediated tool's risk no longer counts against the readiness score.
     remediated = Column(Boolean, nullable=False, default=False)

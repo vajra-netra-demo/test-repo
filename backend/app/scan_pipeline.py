@@ -155,6 +155,7 @@ def run_full_cycle(
                     was_cancelled = True
                     break
                 risk = assess_tool(_tool_to_dict(t))
+                t.previous_risk_score = t.risk_score
                 t.risk_score = risk["risk_score"]
                 t.risk_flags = risk["risk_flags"]
                 t.risk_reasoning = risk["risk_reasoning"]

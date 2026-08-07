@@ -222,6 +222,25 @@ export interface AttackPaths {
   total_paths_found: number;
 }
 
+// GET /discovery/risk-changes — real cross-scan diff using
+// previous_risk_score, captured right before each overwrite (not a full
+// history table, one step back). Excludes tools reassessed for the first
+// time (previous_risk_score null) and tools with a zero delta.
+export interface RiskChange {
+  tool_id: string;
+  tool_name: string;
+  department: string;
+  source: ToolSource;
+  previous_risk_score: number;
+  risk_score: number;
+  delta: number;
+  risk_flags: string[];
+}
+export interface RiskChanges {
+  changes: RiskChange[];
+  total_changes_found: number;
+}
+
 // GET /report/history
 export interface ReadinessHistoryPoint {
   timestamp: string;

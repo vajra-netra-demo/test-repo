@@ -41,6 +41,7 @@ _NEW_NULLABLE_COLUMNS = {
     "saas_tools": {
         "tls_issuer_org": "VARCHAR",
         "tls_subject_org": "VARCHAR",
+        "previous_risk_score": "INTEGER",
     },
 }
 

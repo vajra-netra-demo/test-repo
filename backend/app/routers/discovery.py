@@ -69,6 +69,43 @@ def attack_paths(tenant: Optional[str] = None, db: Session = Depends(get_db)):
     return compute_attack_paths(tools)
 
 
+@router.get("/risk-changes")
+def risk_changes(tenant: Optional[str] = None, top_n: int = 20, db: Session = Depends(get_db)):
+    """Real cross-scan diff, not full behavioral monitoring: previous_risk_score
+    is captured right before every overwrite (scan_pipeline.py's sequential
+    path, tasks.py's Celery task), one step back — not a full history table.
+    That's enough to answer "did this tool's risk move since its last
+    reassessment," a genuine change signal computed from data every scan
+    already produces, not a fabricated one. Null previous_risk_score (a
+    tool reassessed for the first time) is excluded, not treated as a
+    zero-to-something change."""
+    query = db.query(SaaSTool).filter(
+        SaaSTool.previous_risk_score.isnot(None),
+        SaaSTool.risk_score.isnot(None),
+    )
+    if tenant:
+        query = query.filter(SaaSTool.tenant == tenant)
+
+    changes = []
+    for t in query.all():
+        delta = t.risk_score - t.previous_risk_score
+        if delta == 0:
+            continue
+        changes.append({
+            "tool_id": t.id,
+            "tool_name": t.tool_name,
+            "department": t.department,
+            "source": t.source,
+            "previous_risk_score": t.previous_risk_score,
+            "risk_score": t.risk_score,
+            "delta": delta,
+            "risk_flags": t.risk_flags or [],
+        })
+
+    changes.sort(key=lambda c: abs(c["delta"]), reverse=True)
+    return {"changes": changes[:top_n], "total_changes_found": len(changes)}
+
+
 @router.post("/live-scan", dependencies=[Depends(require_admin)])
 def trigger_live_scan():
     if not is_configured():

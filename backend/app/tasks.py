@@ -115,6 +115,7 @@ def assess_and_store_tool(tool_id: str) -> dict:
             return {"tool_id": tool_id, "status": "not_found"}
 
         risk = assess_tool(_tool_to_dict(tool))
+        tool.previous_risk_score = tool.risk_score
         tool.risk_score = risk["risk_score"]
         tool.risk_flags = risk["risk_flags"]
         tool.risk_reasoning = risk["risk_reasoning"]

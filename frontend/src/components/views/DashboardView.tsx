@@ -18,9 +18,10 @@ import { LicenseWastePanel } from "../dashboard/LicenseWastePanel";
 import { AccessGraph } from "../dashboard/AccessGraph";
 import { GraphInsightsPanel } from "../dashboard/GraphInsightsPanel";
 import { AttackPathPanel } from "../dashboard/AttackPathPanel";
+import { RiskChangesPanel } from "../dashboard/RiskChangesPanel";
 import { RiskAlertsModal } from "../dashboard/RiskAlertsModal";
 import { ToolsTable } from "../dashboard/ToolsTable";
-import type { AttackPaths, GraphInsights } from "../../types";
+import type { AttackPaths, GraphInsights, RiskChanges } from "../../types";
 
 function counts(tools: SaaSTool[]): Record<RiskLevel, number> {
   return {
@@ -48,6 +49,8 @@ export function DashboardView() {
   const [graphInsightsLoading, setGraphInsightsLoading] = useState(true);
   const [attackPaths, setAttackPaths] = useState<AttackPaths | null>(null);
   const [attackPathsLoading, setAttackPathsLoading] = useState(true);
+  const [riskChanges, setRiskChanges] = useState<RiskChanges | null>(null);
+  const [riskChangesLoading, setRiskChangesLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
   const [alertsModalFilter, setAlertsModalFilter] = useState<KpiFilter | null>(null);
   const toolsTableRef = useRef<HTMLDivElement>(null);
@@ -102,14 +105,27 @@ export function DashboardView() {
     }
   }, []);
 
+  const loadRiskChanges = useCallback(async (tenant: string) => {
+    setRiskChangesLoading(true);
+    try {
+      setRiskChanges(await api.getRiskChanges(tenant || undefined));
+    } catch {
+      /* best-effort, same as graph insights/attack paths above */
+      setRiskChanges(null);
+    } finally {
+      setRiskChangesLoading(false);
+    }
+  }, []);
+
   const reload = useCallback(async () => {
     await Promise.all([
       loadTools(currentTenant),
       loadHistory(),
       loadGraphInsights(currentTenant),
       loadAttackPaths(currentTenant),
+      loadRiskChanges(currentTenant),
     ]);
-  }, [currentTenant, loadTools, loadHistory, loadGraphInsights, loadAttackPaths]);
+  }, [currentTenant, loadTools, loadHistory, loadGraphInsights, loadAttackPaths, loadRiskChanges]);
 
   useEffect(() => {
     loadStatus();
@@ -140,7 +156,8 @@ export function DashboardView() {
     loadTools(currentTenant);
     loadGraphInsights(currentTenant);
     loadAttackPaths(currentTenant);
-  }, [currentTenant, loadTools, loadGraphInsights, loadAttackPaths]);
+    loadRiskChanges(currentTenant);
+  }, [currentTenant, loadTools, loadGraphInsights, loadAttackPaths, loadRiskChanges]);
 
   useEffect(() => {
     loadHistory();
@@ -352,6 +369,9 @@ export function DashboardView() {
 
       <SectionTitle>Attack Paths — Structural Reachability</SectionTitle>
       <AttackPathPanel data={attackPaths} loading={attackPathsLoading} />
+
+      <SectionTitle>Risk Changes — Since Last Scan</SectionTitle>
+      <RiskChangesPanel data={riskChanges} loading={riskChangesLoading} />
 
       <div ref={toolsTableRef}>
         <SectionTitle>Discovered Tools</SectionTitle>
