@@ -24,10 +24,12 @@ export function ScanProgressBanner({ progress }: { progress: ScanProgress | null
   const phase = progress?.phase ?? "starting";
   const total = progress?.total ?? 0;
   const current = progress?.current ?? 0;
-  // total is 0 during "starting" (counts not known yet) and for the whole
-  // duration of the Celery parallel path (no in-process counter to report
-  // from — see scan_pipeline.py) — both fall back to a spinning ring with
-  // no percentage rather than showing a fabricated number.
+  // total is 0 only during "starting" (counts not known yet, before the
+  // tool list is even fetched) — falls back to a spinning ring with no
+  // percentage rather than showing a fabricated number. The Celery
+  // parallel path now reports real progress too (GroupResult.completed_
+  // count(), see scan_pipeline.py), so this isn't the permanent
+  // no-progress case it used to be.
   const known = total > 0;
   const pct = known ? Math.min(100, Math.round((current / total) * 100)) : 0;
   const dash = (pct / 100) * CIRCUMFERENCE;

@@ -7,6 +7,7 @@ assessment together, instead of three copies that can drift out of sync
 happened).
 """
 
+import time
 from typing import Callable, Optional
 
 from sqlalchemy.orm import Session
@@ -97,18 +98,25 @@ def run_full_cycle(
         # copies are stale afterward -- expire and re-fetch rather than
         # trust the in-memory `all_tools` objects.
         #
-        # No granular per-tool progress here: each task runs in a separate
-        # worker process, so there's no in-process counter to increment the
-        # way the sequential branch below has. Reporting a fabricated
-        # incremental count would be worse than reporting none — the
-        # dashboard's progress bar falls back to an indeterminate state
-        # for this branch instead (see ScanProgressBanner.tsx).
+        # Real per-task progress: GroupResult.completed_count() reflects
+        # each task's actual completion in the shared SQLite result
+        # backend (tasks.py's db+sqlite backend) — a genuine cross-process
+        # counter, not a fabricated increment. Polling it here (instead of
+        # a single blocking job.get()) is what was missing before: without
+        # it, this branch reported 0/total for the entire run and jumped
+        # straight to total/total on completion — real progress, but with
+        # nothing visible in between, which read as a frozen/stuck bar on
+        # a large real deployment (258 tools) even though the scan itself
+        # was progressing normally underneath.
         from celery import group
         from app.tasks import assess_and_store_tool
 
         _report(0, total_assess, "assessing")
         job = group(assess_and_store_tool.s(t.id) for t in all_tools).apply_async()
-        job.get(timeout=300, propagate=False)
+        deadline = time.monotonic() + 300
+        while not job.ready() and time.monotonic() < deadline:
+            _report(min(job.completed_count(), total_assess), total_assess, "assessing")
+            time.sleep(1)
         db.expire_all()
         all_tools = db.query(SaaSTool).all()
         _report(total_assess, total_assess, "assessing")

@@ -123,6 +123,12 @@ export function DashboardView() {
           setScanning(true);
           setScanProgress(data);
           pollScanProgress();
+        } else {
+          // No reload() here — the other mount-time effects (loadTools,
+          // loadHistory, etc.) already fetch fresh data on this same
+          // mount; this just surfaces the toast for a completion that
+          // may otherwise have gone unseen. See notifyScanResult below.
+          notifyScanResult(data);
         }
       })
       .catch(() => {});
@@ -142,6 +148,30 @@ export function DashboardView() {
   useEffect(() => () => {
     if (pollTimer.current) clearTimeout(pollTimer.current);
   }, []);
+
+  // Dedups by finished_at so the same completed scan doesn't re-toast
+  // every time this page mounts/reloads — persisted to localStorage so a
+  // page reload doesn't reset the "already told the user about this one"
+  // memory. Needed because a scan can finish while nobody's actively
+  // polling (tab reloaded, or DashboardView unmounted from a sidebar nav
+  // and remounted after a long real scan — e.g. Celery-parallelized
+  // across hundreds of tools — completed in the background); without
+  // this, that completion was silently swallowed.
+  const LAST_NOTIFIED_SCAN_KEY = "netra-last-scan-notified";
+  function notifyScanResult(data: ScanProgress) {
+    if (data.finished_at) {
+      if (localStorage.getItem(LAST_NOTIFIED_SCAN_KEY) === data.finished_at) return;
+      localStorage.setItem(LAST_NOTIFIED_SCAN_KEY, data.finished_at);
+    }
+    if (data.last_error) {
+      showToast(`Live scan failed: ${data.last_error}`, "error");
+    } else if (data.last_result) {
+      showToast(
+        `Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`,
+        "success",
+      );
+    }
+  }
 
   function pollScanProgress() {
     const check = async () => {
@@ -163,14 +193,7 @@ export function DashboardView() {
       }
       setScanning(false);
       setScanProgress(null);
-      if (data.last_error) {
-        showToast(`Live scan failed: ${data.last_error}`, "error");
-      } else if (data.last_result) {
-        showToast(
-          `Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`,
-          "success",
-        );
-      }
+      notifyScanResult(data);
       reload();
     };
     check();

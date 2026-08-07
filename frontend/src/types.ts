@@ -130,12 +130,14 @@ export type ScanPhase = "idle" | "starting" | "discovering" | "assessing";
 export interface ScanProgress {
   running: boolean;
   // Real per-tool progress (backend/app/scan_pipeline.py's on_progress
-  // callback) — current/total are 0 whenever the count for the current
-  // phase isn't known yet (e.g. "starting", or the Celery parallel path,
-  // which has no in-process counter to report from).
+  // callback, including the Celery parallel path via GroupResult.
+  // completed_count()) — current/total are 0 only during "starting",
+  // before the tool list itself is known.
   phase?: ScanPhase;
   current?: number;
   total?: number;
+  started_at?: string | null;
+  finished_at?: string | null;
   last_error?: string | null;
   last_result?: { live_ingested: number; readiness_score: number } | null;
 }
