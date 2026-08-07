@@ -14,6 +14,7 @@ import { KpiRow, type KpiFilter } from "../dashboard/KpiRow";
 import { DonutChart } from "../dashboard/DonutChart";
 import { DeptChart } from "../dashboard/DeptChart";
 import { RoiCalculator } from "../dashboard/RoiCalculator";
+import { LicenseWastePanel } from "../dashboard/LicenseWastePanel";
 import { AccessGraph } from "../dashboard/AccessGraph";
 import { GraphInsightsPanel } from "../dashboard/GraphInsightsPanel";
 import { AttackPathPanel } from "../dashboard/AttackPathPanel";
@@ -336,6 +337,12 @@ export function DashboardView() {
 
       <SectionTitle>ROI &amp; Exposure Calculator</SectionTitle>
       <RoiCalculator highRiskCount={riskCounts.High} />
+
+      <SectionTitle>
+        License &amp; Seat Waste{" "}
+        <span className="font-normal normal-case tracking-normal">(dormant tools still consuming a seat)</span>
+      </SectionTitle>
+      <LicenseWastePanel tools={tools} />
 
       <SectionTitle>Access Graph — Data Categories &rarr; Risk Level</SectionTitle>
       <AccessGraph tools={tools} />

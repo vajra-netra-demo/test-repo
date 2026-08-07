@@ -12,7 +12,9 @@ from whichever machine it runs on.
   gets flagged by the same broad-scope logic that already flags an
   over-permissioned OAuth grant.
 - Reads installed software from the Windows registry (`Uninstall` keys) or
-  Linux package managers (`dpkg`/`rpm`).
+  a Linux package manager — tries `dpkg` (Debian/Ubuntu), `rpm` (RHEL/
+  Fedora/CentOS/SUSE), `pacman` (Arch), then `apk` (Alpine) in order,
+  using whichever one is actually present on that machine.
 - POSTs the result to `POST /discovery/endpoint-report` on your NETRA
   backend, authenticated with a shared bearer token.
 

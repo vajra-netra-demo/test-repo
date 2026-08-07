@@ -177,34 +177,80 @@ def scan_installed_software_windows():
     return findings
 
 
-def scan_installed_software_linux():
+def _software_finding(name, version):
+    return {
+        "item_type": "installed_software", "name": name, "vendor": None,
+        "version": version, "browser": None, "permissions": [], "install_date": None,
+    }
+
+
+def _run_pkg_query(cmd, parse_line, timeout=15):
+    """Runs one package-manager query command and parses its output into
+    findings, or returns None if that package manager isn't present/failed
+    (FileNotFoundError means "not this distro's package manager" — not
+    an error, just try the next one in the chain)."""
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    if out.returncode != 0:
+        return None
     findings = []
-    try:
-        out = subprocess.run(["dpkg-query", "-W", "-f=${Package}\\t${Version}\\n"], capture_output=True, text=True, timeout=15)
-        if out.returncode == 0:
-            for line in out.stdout.strip().splitlines():
-                parts = line.split("\t")
-                if len(parts) == 2:
-                    findings.append({
-                        "item_type": "installed_software", "name": parts[0], "vendor": None,
-                        "version": parts[1], "browser": None, "permissions": [], "install_date": None,
-                    })
-            return findings
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-    try:
-        out = subprocess.run(["rpm", "-qa", "--qf", "%{NAME}\\t%{VERSION}\\n"], capture_output=True, text=True, timeout=15)
-        if out.returncode == 0:
-            for line in out.stdout.strip().splitlines():
-                parts = line.split("\t")
-                if len(parts) == 2:
-                    findings.append({
-                        "item_type": "installed_software", "name": parts[0], "vendor": None,
-                        "version": parts[1], "browser": None, "permissions": [], "install_date": None,
-                    })
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+    for line in out.stdout.strip().splitlines():
+        parsed = parse_line(line)
+        if parsed:
+            findings.append(_software_finding(*parsed))
     return findings
+
+
+def _parse_tab_separated(line):
+    parts = line.split("\t")
+    return (parts[0], parts[1]) if len(parts) == 2 else None
+
+
+def _parse_pacman_line(line):
+    # `pacman -Q` prints "name version" (space-separated) — package names
+    # never contain spaces, so a single split is unambiguous.
+    parts = line.split(" ", 1)
+    return (parts[0], parts[1]) if len(parts) == 2 else None
+
+
+_APK_NAME_VERSION_RE = None
+
+
+def _parse_apk_line(line):
+    # `apk info -v` prints "name-version-release" concatenated with no
+    # separator (e.g. "bash-5.2.15-r5") — Alpine has no built-in way to get
+    # a delimited name/version pair the way dpkg/rpm/pacman do. Splitting on
+    # the last run of "-<digit...>" is a best-effort heuristic, not exact:
+    # it can misparse a package whose *name* itself ends in a hyphen+digits
+    # segment. Good enough for a discovery signal; not represented as more
+    # precise than that.
+    global _APK_NAME_VERSION_RE
+    if _APK_NAME_VERSION_RE is None:
+        import re
+        _APK_NAME_VERSION_RE = re.compile(r"^(.+?)-(\d[\w.]*(?:-r\d+)?)$")
+    m = _APK_NAME_VERSION_RE.match(line.strip())
+    return (m.group(1), m.group(2)) if m else None
+
+
+def scan_installed_software_linux():
+    # Tried in order; first package manager actually present on this distro
+    # wins. Covers the two major enterprise/desktop families (dpkg for
+    # Debian/Ubuntu, rpm for RHEL/Fedora/CentOS/SUSE) plus Arch (pacman) and
+    # Alpine (apk) — a FileNotFoundError from any of these just means "not
+    # this distro," not a real failure, so the chain continues silently.
+    chain = [
+        (["dpkg-query", "-W", "-f=${Package}\\t${Version}\\n"], _parse_tab_separated),
+        (["rpm", "-qa", "--qf", "%{NAME}\\t%{VERSION}\\n"], _parse_tab_separated),
+        (["pacman", "-Q"], _parse_pacman_line),
+        (["apk", "info", "-v"], _parse_apk_line),
+    ]
+    for cmd, parser in chain:
+        findings = _run_pkg_query(cmd, parser)
+        if findings is not None:
+            return findings
+    return []
 
 
 def scan_installed_software():
