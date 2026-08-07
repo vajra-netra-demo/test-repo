@@ -165,6 +165,11 @@ export function DashboardView() {
     }
     if (data.last_error) {
       showToast(`Live scan failed: ${data.last_error}`, "error");
+    } else if (data.last_result?.cancelled) {
+      showToast(
+        `Scan stopped — kept ${data.last_result.live_ingested} real tool(s) assessed so far. Readiness: ${data.last_result.readiness_score}/100.`,
+        "info",
+      );
     } else if (data.last_result) {
       showToast(
         `Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`,
@@ -217,6 +222,22 @@ export function DashboardView() {
     }
   }
 
+  async function cancelScan() {
+    // Optimistic: flips the button to "Stopping…" immediately rather than
+    // waiting for the next 1.2s poll to reflect cancel_requested, since
+    // the backend only notices between tools and may not respond to this
+    // call for a moment (a real Claude call or Celery task already in
+    // flight keeps running until it finishes).
+    setScanProgress((prev) => (prev ? { ...prev, cancel_requested: true } : prev));
+    try {
+      await api.cancelScan();
+    } catch (e) {
+      const message = e instanceof ApiError ? e.message : String(e);
+      showToast(`Could not stop the scan: ${message}`, "error");
+      setScanProgress((prev) => (prev ? { ...prev, cancel_requested: false } : prev));
+    }
+  }
+
   async function downloadCsv() {
     try {
       await api.downloadCsv(currentTenant || undefined);
@@ -261,8 +282,10 @@ export function DashboardView() {
         status={status}
         statusError={statusError}
         scanning={scanning}
+        cancelRequested={scanProgress?.cancel_requested ?? false}
         canRunScan={isAdmin}
         onRunScan={runLiveScan}
+        onCancelScan={cancelScan}
         onDownloadCsv={downloadCsv}
         onDownloadReport={downloadEvidenceReport}
       />

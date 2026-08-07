@@ -126,7 +126,7 @@ export interface DiscoveryStatus {
 }
 
 // GET /discovery/scan-progress
-export type ScanPhase = "idle" | "starting" | "discovering" | "assessing";
+export type ScanPhase = "idle" | "starting" | "discovering" | "assessing" | "cancelled";
 export interface ScanProgress {
   running: boolean;
   // Real per-tool progress (backend/app/scan_pipeline.py's on_progress
@@ -138,8 +138,12 @@ export interface ScanProgress {
   total?: number;
   started_at?: string | null;
   finished_at?: string | null;
+  // True as soon as POST /discovery/scan-cancel is called, even before the
+  // running scan actually notices (it only checks between tools) — lets
+  // the UI show "Stopping…" instead of looking like the click did nothing.
+  cancel_requested?: boolean;
   last_error?: string | null;
-  last_result?: { live_ingested: number; readiness_score: number } | null;
+  last_result?: { live_ingested: number; readiness_score: number; cancelled?: boolean } | null;
 }
 
 // GET /tenants — data/customer_profiles.json "profiles" entries

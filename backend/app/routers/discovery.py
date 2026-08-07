@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user, require_admin
 from app.database import get_db
 from app.discovery_provider import is_configured, active_provider
-from app.manual_scan import start_manual_scan, get_manual_scan_status
+from app.manual_scan import start_manual_scan, get_manual_scan_status, request_cancel
 from app.models import SaaSTool
 from app.scheduler import get_scheduler_status
 from app.siem.sentinel_connector import is_configured as sentinel_is_configured
@@ -89,3 +89,16 @@ def trigger_live_scan():
 @router.get("/scan-progress")
 def scan_progress():
     return get_manual_scan_status()
+
+
+@router.post("/scan-cancel", dependencies=[Depends(require_admin)])
+def cancel_scan():
+    """Requests cancellation of whichever scan is currently running (manual
+    or scheduled — see manual_scan.py's docstring for why there's no
+    separate concept of the two). Best-effort: run_full_cycle only checks
+    between tools, so a real Claude call or Celery task already in flight
+    still finishes; whatever's already been written to the DB by then is
+    kept, not rolled back."""
+    if not request_cancel():
+        raise HTTPException(status_code=409, detail="No scan is currently running.")
+    return {"status": "cancel_requested"}

@@ -5,6 +5,7 @@ const PHASE_LABEL: Record<string, string> = {
   starting: "Starting live scan",
   discovering: "Discovering live tools",
   assessing: "Running risk assessment",
+  cancelled: "Stopping scan",
 };
 
 const r = 26,
@@ -21,7 +22,12 @@ const CIRCUMFERENCE = 2 * Math.PI * r;
 // ReadinessGauge.tsx, side-by-side with the status text the way that gauge
 // sits beside its own label, rather than a full-width linear bar.
 export function ScanProgressBanner({ progress }: { progress: ScanProgress | null }) {
-  const phase = progress?.phase ?? "starting";
+  // cancel_requested flips as soon as Stop is clicked, even before the
+  // running scan actually notices (run_full_cycle only checks between
+  // tools) — shown ahead of whatever phase is currently reported, so the
+  // click reads as acknowledged rather than looking like it did nothing.
+  const stopping = !!progress?.cancel_requested;
+  const phase = stopping ? "cancelled" : progress?.phase ?? "starting";
   const total = progress?.total ?? 0;
   const current = progress?.current ?? 0;
   // total is 0 only during "starting" (counts not known yet, before the
@@ -74,8 +80,9 @@ export function ScanProgressBanner({ progress }: { progress: ScanProgress | null
           )}
         </div>
         <div className="mt-0.5 text-[12px] text-accent/80">
-          This can take a few minutes for a large tool count. Feel free to keep browsing the
-          dashboard meanwhile.
+          {stopping
+            ? "Finishing whatever's already in flight, then stopping — whatever's been assessed so far is kept."
+            : "This can take a few minutes for a large tool count. Feel free to keep browsing the dashboard meanwhile."}
         </div>
       </div>
     </div>

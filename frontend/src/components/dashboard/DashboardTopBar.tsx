@@ -1,4 +1,4 @@
-import { Download, FileText, RefreshCw } from "lucide-react";
+import { Download, FileText, RefreshCw, Square } from "lucide-react";
 import type { DiscoveryStatus } from "../../types";
 import { StatusPill } from "../Badge";
 
@@ -6,8 +6,10 @@ interface DashboardTopBarProps {
   status: DiscoveryStatus | null;
   statusError: boolean;
   scanning: boolean;
+  cancelRequested: boolean;
   canRunScan: boolean;
   onRunScan: () => void;
+  onCancelScan: () => void;
   onDownloadCsv: () => void;
   onDownloadReport: () => void;
 }
@@ -16,8 +18,10 @@ export function DashboardTopBar({
   status,
   statusError,
   scanning,
+  cancelRequested,
   canRunScan,
   onRunScan,
+  onCancelScan,
   onDownloadCsv,
   onDownloadReport,
 }: DashboardTopBarProps) {
@@ -54,6 +58,17 @@ export function DashboardTopBar({
             <RefreshCw size={14} strokeWidth={2.5} className={scanning ? "animate-spin" : ""} />
             {scanning ? "Scanning…" : "Run Live Scan"}
           </button>
+          {scanning && (
+            <button
+              onClick={onCancelScan}
+              disabled={!canRunScan || cancelRequested}
+              title={canRunScan ? "Stop the running scan — keeps whatever's already been assessed" : "Admin only"}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-high/30 bg-high-bg px-4 py-2.25 text-[13px] font-semibold text-high-dark transition-all duration-150 hover:-translate-y-0.5 hover:bg-high hover:text-white disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-high-bg disabled:hover:text-high-dark"
+            >
+              <Square size={12} strokeWidth={2.5} fill="currentColor" />
+              {cancelRequested ? "Stopping…" : "Stop"}
+            </button>
+          )}
         </div>
       </div>
 
