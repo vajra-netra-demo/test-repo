@@ -16,6 +16,7 @@ import { DeptChart } from "../dashboard/DeptChart";
 import { RoiCalculator } from "../dashboard/RoiCalculator";
 import { LicenseWastePanel } from "../dashboard/LicenseWastePanel";
 import { AccessGraph } from "../dashboard/AccessGraph";
+import { DataResidencyPanel } from "../dashboard/DataResidencyPanel";
 import { GraphInsightsPanel } from "../dashboard/GraphInsightsPanel";
 import { AttackPathPanel } from "../dashboard/AttackPathPanel";
 import { RiskChangesPanel } from "../dashboard/RiskChangesPanel";
@@ -392,6 +393,9 @@ export function DashboardView() {
 
           <SectionTitle>Access Graph — Data Categories &rarr; Risk Level</SectionTitle>
           <AccessGraph tools={tools} />
+
+          <SectionTitle>Data Residency — Where Your Data Actually Goes</SectionTitle>
+          <DataResidencyPanel tools={tools} />
 
           <SectionTitle>Graph Insights — Real Computed Metrics</SectionTitle>
           <GraphInsightsPanel data={graphInsights} loading={graphInsightsLoading} />
