@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
-import type { DiscoveryStatus, ReadinessHistoryPoint, RiskLevel, SaaSTool, TenantProfile } from "../../types";
+import type { DiscoveryStatus, ReadinessHistoryPoint, RiskLevel, SaaSTool, ScanProgress, TenantProfile } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { useToast } from "../Toaster";
 import { DashboardTopBar } from "../dashboard/DashboardTopBar";
@@ -34,6 +34,7 @@ export function DashboardView() {
   const [status, setStatus] = useState<DiscoveryStatus | null>(null);
   const [statusError, setStatusError] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
 
   const [tenantProfiles, setTenantProfiles] = useState<TenantProfile[]>([]);
   const [currentTenant, setCurrentTenant] = useState("");
@@ -99,6 +100,7 @@ export function DashboardView() {
       .then((data) => {
         if (data.running) {
           setScanning(true);
+          setScanProgress(data);
           pollScanProgress();
         }
       })
@@ -129,10 +131,16 @@ export function DashboardView() {
         return;
       }
       if (data.running) {
-        pollTimer.current = setTimeout(check, 4000);
+        setScanProgress(data);
+        // Real per-tool progress ticks fast enough (each tool is a single
+        // DB write, or one LLM call in REAL mode) that a 4s poll would lag
+        // visibly behind — 1.2s keeps the bar/counter feeling live without
+        // hammering the endpoint.
+        pollTimer.current = setTimeout(check, 1200);
         return;
       }
       setScanning(false);
+      setScanProgress(null);
       if (data.last_error) {
         showToast(`Live scan failed: ${data.last_error}`, "error");
       } else if (data.last_result) {
@@ -148,6 +156,7 @@ export function DashboardView() {
 
   async function runLiveScan() {
     setScanning(true);
+    setScanProgress({ running: true, phase: "starting", current: 0, total: 0 });
     try {
       await api.startLiveScan();
       showToast(
@@ -159,6 +168,7 @@ export function DashboardView() {
       const message = e instanceof ApiError ? e.message : String(e);
       showToast(`Live scan failed: ${message}`, "error");
       setScanning(false);
+      setScanProgress(null);
     }
   }
 
@@ -212,7 +222,7 @@ export function DashboardView() {
         onDownloadReport={downloadEvidenceReport}
       />
 
-      {scanning && <ScanProgressBanner />}
+      {scanning && <ScanProgressBanner progress={scanProgress} />}
 
       <TenantBar profiles={tenantProfiles} currentTenant={currentTenant} onChange={setCurrentTenant} />
 
