@@ -4,7 +4,11 @@ import type { ScanProgress } from "../../types";
 const PHASE_LABEL: Record<string, string> = {
   starting: "Starting live scan",
   discovering: "Discovering live tools",
-  assessing: "Running risk assessment",
+  // Re-scores every tool in the org's inventory (sample + live + endpoint),
+  // not just the newly-discovered ones from the "discovering" phase above —
+  // named explicitly so the count here doesn't read as still counting the
+  // small number of *new* tools just found a moment ago.
+  assessing: "Re-assessing existing tools",
   cancelled: "Stopping scan",
 };
 

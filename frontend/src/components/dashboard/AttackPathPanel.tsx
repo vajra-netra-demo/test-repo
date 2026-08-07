@@ -3,11 +3,6 @@ import type { AttackPaths } from "../../types";
 import { chartInk, riskColors, riskLevel } from "../../lib/risk";
 import { useTheme } from "../../theme/ThemeProvider";
 
-// Node count above which permanent text labels would overlap into noise —
-// beyond this, identity is still available via hover <title>, just not
-// drawn on the canvas (selective direct labeling, not "label everything").
-const MAX_LABELED_NODES = 14;
-
 // Renders backend/app/graph_analysis.py::compute_attack_paths as an actual
 // node-link graph (tools as nodes on a circle, paths as directed edges)
 // rather than a flat list — the data IS a graph (real 2-hop traversal over
@@ -33,10 +28,10 @@ export function AttackPathPanel({ data, loading }: { data: AttackPaths | null; l
     const names = [...nodeScores.keys()];
 
     const w = 640,
-      h = 420,
+      h = 460,
       cx = w / 2,
       cy = h / 2,
-      r = Math.min(w, h) / 2 - 90;
+      r = Math.min(w, h) / 2 - 100;
     const angleFor = (i: number) => (i / names.length) * 2 * Math.PI - Math.PI / 2;
     const pos = new Map<string, { x: number; y: number; angle: number }>();
     names.forEach((name, i) => {
@@ -55,7 +50,7 @@ export function AttackPathPanel({ data, loading }: { data: AttackPaths | null; l
       return { ...p, key: `${p.from_tool}-${p.to_tool}-${p.via_kind}-${p.via_name}-${i}`, from, to, mx, my };
     });
 
-    return { names, pos, edges, showLabels: names.length <= MAX_LABELED_NODES, cx, cy, w, h };
+    return { names, pos, edges, cx, cy, w, h };
   }, [data]);
 
   if (loading || !data) {
@@ -147,19 +142,21 @@ export function AttackPathPanel({ data, loading }: { data: AttackPaths | null; l
                       {score !== null ? ` — risk score ${score}` : ""}
                     </title>
                   </circle>
-                  {graph.showLabels && (
-                    <text
-                      x={p.x + (onRight ? 11 : -11)}
-                      y={p.y}
-                      textAnchor={onRight ? "start" : "end"}
-                      dominantBaseline="middle"
-                      fontSize={10}
-                      fontWeight={600}
-                      fill={ink.ink}
-                    >
-                      {name}
-                    </text>
-                  )}
+                  {/* Always shown -- a security graph with no visible tool
+                      identity isn't useful even when node count is high;
+                      font shrinks a bit past a dozen nodes to reduce
+                      collision, but text never disappears entirely. */}
+                  <text
+                    x={p.x + (onRight ? 11 : -11)}
+                    y={p.y}
+                    textAnchor={onRight ? "start" : "end"}
+                    dominantBaseline="middle"
+                    fontSize={graph.names.length > 12 ? 8.5 : 10}
+                    fontWeight={600}
+                    fill={ink.ink}
+                  >
+                    {name}
+                  </text>
                 </g>
               );
             })}

@@ -151,6 +151,16 @@ def compute_attack_paths(tools: list, top_n: int = 15) -> dict:
     for source in high_risk_nodes:
         for mid in g.neighbors(source):
             mid_kind = g.nodes[mid]["kind"]
+            # "Other" is the catch-all bucket for data that didn't match any
+            # specific category keyword (see _categorize above) -- it
+            # typically covers most of the org's tools, so two tools both
+            # landing in "Other" share nothing meaningful, not a real
+            # lateral-movement signal. Without this exclusion a handful of
+            # High-risk tools fan out into tens of thousands of "paths"
+            # through that one uninformative bucket, drowning out the real
+            # department/specific-category signal entirely.
+            if mid_kind == "data_category" and mid.split("::", 1)[1] == "Other":
+                continue
             for target in g.neighbors(mid):
                 if target == source or g.nodes[target].get("kind") != "tool":
                     continue
