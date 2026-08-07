@@ -11,7 +11,7 @@ from app.models import SaaSTool
 from app.scheduler import get_scheduler_status
 from app.siem.sentinel_connector import is_configured as sentinel_is_configured
 from app.siem.splunk_connector import is_configured as splunk_is_configured
-from app.graph_analysis import compute_graph_insights
+from app.graph_analysis import compute_graph_insights, compute_attack_paths
 
 router = APIRouter(prefix="/discovery", tags=["discovery"], dependencies=[Depends(get_current_user)])
 
@@ -46,6 +46,27 @@ def access_graph_insights(tenant: Optional[str] = None, db: Session = Depends(ge
         for t in query.all()
     ]
     return compute_graph_insights(tools)
+
+
+@router.get("/attack-paths")
+def attack_paths(tenant: Optional[str] = None, db: Session = Depends(get_db)):
+    """Real 2-hop graph traversal (app/graph_analysis.py::compute_attack_paths)
+    from each High-risk tool to other tools sharing its department or data
+    category — structural reachability grounded in real discovered data,
+    not a simulated attack. See that function's docstring for why."""
+    query = db.query(SaaSTool)
+    if tenant:
+        query = query.filter(SaaSTool.tenant == tenant)
+    tools = [
+        {
+            "tool_name": t.tool_name,
+            "department": t.department,
+            "data_categories_accessed": t.data_categories_accessed,
+            "risk_score": t.risk_score,
+        }
+        for t in query.all()
+    ]
+    return compute_attack_paths(tools)
 
 
 @router.post("/live-scan", dependencies=[Depends(require_admin)])

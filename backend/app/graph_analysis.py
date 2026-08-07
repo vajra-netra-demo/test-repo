@@ -110,3 +110,72 @@ def compute_graph_insights(tools: list, top_n: int = 5) -> dict:
         "most_central_tools": most_central,
         "bridge_tools": bridge_tools,
     }
+
+
+HIGH_RISK_THRESHOLD = 70  # matches scan_pipeline.py's own threshold
+
+
+def compute_attack_paths(tools: list, top_n: int = 15) -> dict:
+    """Real 2-hop graph traversal over the same access graph
+    build_access_graph() builds — from each High-risk tool, follows its
+    real department/data-category edges to find other tools that share
+    that same department or data-category bucket.
+
+    This is deliberately NOT an attack simulation: it runs nothing,
+    executes no adversary behavior, sends no traffic — same line
+    app/attack_mapping.py's docstring already draws (the team explicitly
+    walked back an earlier "attack-simulation" framing for having no
+    connection to NETRA's actual discovery/governance thesis). This is a
+    structural-reachability explanation: "if this already-discovered
+    High-risk tool were compromised, here's what it's actually connected
+    to via a real shared department or data category" — every edge in
+    the path is a real fact about real discovered tools, not a modeled
+    or invented adversary action.
+
+    A department-shared path is ranked above a data-category-shared one:
+    sharing a department means the same team's actual operating
+    environment, a materially stronger lateral-movement signal than two
+    tools merely touching the same broad category of data.
+    """
+    g = build_access_graph(tools)
+    if g.number_of_nodes() == 0:
+        return {"high_risk_source_count": 0, "paths": [], "total_paths_found": 0}
+
+    high_risk_nodes = [
+        n for n, d in g.nodes(data=True)
+        if d.get("kind") == "tool" and (d.get("risk_score") or 0) >= HIGH_RISK_THRESHOLD
+    ]
+
+    paths = []
+    seen = set()
+    for source in high_risk_nodes:
+        for mid in g.neighbors(source):
+            mid_kind = g.nodes[mid]["kind"]
+            for target in g.neighbors(mid):
+                if target == source or g.nodes[target].get("kind") != "tool":
+                    continue
+                # Keyed on the unordered {source, target} pair *and* the
+                # connecting node, so a pair sharing both a department AND
+                # a data category yields two distinct, real paths rather
+                # than being collapsed into one or duplicated when the
+                # target is itself later processed as its own source.
+                key = (frozenset((source, target)), mid)
+                if key in seen:
+                    continue
+                seen.add(key)
+                paths.append({
+                    "from_tool": source.replace("tool::", "", 1),
+                    "from_risk_score": g.nodes[source].get("risk_score"),
+                    "to_tool": target.replace("tool::", "", 1),
+                    "to_risk_score": g.nodes[target].get("risk_score"),
+                    "via_kind": "department" if mid_kind == "department" else "data_category",
+                    "via_name": mid.split("::", 1)[1],
+                })
+
+    paths.sort(key=lambda p: (p["via_kind"] != "department", -(p["to_risk_score"] or 0)))
+
+    return {
+        "high_risk_source_count": len(high_risk_nodes),
+        "paths": paths[:top_n],
+        "total_paths_found": len(paths),
+    }
