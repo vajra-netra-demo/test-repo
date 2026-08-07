@@ -31,6 +31,15 @@ function counts(tools: SaaSTool[]): Record<RiskLevel, number> {
   };
 }
 
+type DashboardTab = "overview" | "risk" | "license" | "tools";
+
+const DASHBOARD_TABS: Array<{ key: DashboardTab; label: string }> = [
+  { key: "overview", label: "Overview" },
+  { key: "risk", label: "Risk Insights" },
+  { key: "license", label: "License & Waste" },
+  { key: "tools", label: "Discovered Tools" },
+];
+
 export function DashboardView() {
   const { showToast } = useToast();
   const { isAdmin } = useAuth();
@@ -53,6 +62,7 @@ export function DashboardView() {
   const [riskChangesLoading, setRiskChangesLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
   const [alertsModalFilter, setAlertsModalFilter] = useState<KpiFilter | null>(null);
+  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const toolsTableRef = useRef<HTMLDivElement>(null);
 
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -287,11 +297,14 @@ export function DashboardView() {
 
   function jumpToTable() {
     setAlertsModalFilter(null);
-    // The table is well below the fold at this point in the page (past the
-    // trend chart, ROI calculator, access graph) — scroll to it so the
-    // modal's "View in table" button actually lands on the filtered
-    // result, not just changes state off-screen.
-    toolsTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveTab("tools");
+    // The table only exists in the DOM once the "Discovered Tools" tab is
+    // active — switching tabs above unmounts/remounts sections, so the ref
+    // isn't attached yet on this same tick. Defer the scroll to the next
+    // macrotask, after React has committed the new tab's render.
+    setTimeout(() => {
+      toolsTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
   }
 
   return (
@@ -312,30 +325,19 @@ export function DashboardView() {
 
       <TenantBar profiles={tenantProfiles} currentTenant={currentTenant} onChange={setCurrentTenant} />
 
-      <SectionTitle>DPDP Readiness Score</SectionTitle>
-      <ReadinessGauge tools={tools} />
-
-      <SectionTitle>
-        Readiness Trend{" "}
-        <span className="font-normal normal-case tracking-normal">(one point per scan — manual or scheduled)</span>
-      </SectionTitle>
-      <TrendChart history={history} />
-
-      <SectionTitle>
-        Scan History{" "}
-        <span className="font-normal normal-case tracking-normal">(click a row for details)</span>
-      </SectionTitle>
-      <ScanHistoryTable history={history} />
-
-      <SectionTitle>Risk Summary</SectionTitle>
-      <KpiRow
-        total={tools.length}
-        high={riskCounts.High}
-        med={riskCounts.Medium}
-        low={riskCounts.Low}
-        activeFilter={riskFilter}
-        onFilterChange={openRiskAlerts}
-      />
+      <div className="mb-5 mt-5 flex gap-1 rounded-lg bg-tint/[0.04] p-1">
+        {DASHBOARD_TABS.map((tab) => (
+          <div
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`cursor-pointer rounded-md px-3.5 py-1.5 text-[13px] font-semibold transition-all duration-150 ${
+              activeTab === tab.key ? "bg-accent-light text-accent" : "text-muted hover:text-text"
+            }`}
+          >
+            {tab.label}
+          </div>
+        ))}
+      </div>
 
       {alertsModalFilter && (
         <RiskAlertsModal
@@ -346,42 +348,83 @@ export function DashboardView() {
         />
       )}
 
-      <SectionTitle>Risk Breakdown</SectionTitle>
-      <div className="grid grid-cols-[260px_1fr] gap-4">
-        <DonutChart counts={riskCounts} />
-        <DeptChart tools={tools} />
-      </div>
+      {activeTab === "overview" && (
+        <>
+          <SectionTitle>DPDP Readiness Score</SectionTitle>
+          <ReadinessGauge tools={tools} />
 
-      <SectionTitle>ROI &amp; Exposure Calculator</SectionTitle>
-      <RoiCalculator highRiskCount={riskCounts.High} />
+          <SectionTitle>
+            Readiness Trend{" "}
+            <span className="font-normal normal-case tracking-normal">
+              (one point per scan — manual or scheduled)
+            </span>
+          </SectionTitle>
+          <TrendChart history={history} />
 
-      <SectionTitle>
-        License &amp; Seat Waste{" "}
-        <span className="font-normal normal-case tracking-normal">(dormant tools still consuming a seat)</span>
-      </SectionTitle>
-      <LicenseWastePanel tools={tools} />
+          <SectionTitle>
+            Scan History{" "}
+            <span className="font-normal normal-case tracking-normal">(click a row for details)</span>
+          </SectionTitle>
+          <ScanHistoryTable history={history} />
 
-      <SectionTitle>Access Graph — Data Categories &rarr; Risk Level</SectionTitle>
-      <AccessGraph tools={tools} />
+          <SectionTitle>Risk Summary</SectionTitle>
+          <KpiRow
+            total={tools.length}
+            high={riskCounts.High}
+            med={riskCounts.Medium}
+            low={riskCounts.Low}
+            activeFilter={riskFilter}
+            onFilterChange={openRiskAlerts}
+          />
+        </>
+      )}
 
-      <SectionTitle>Graph Insights — Real Computed Metrics</SectionTitle>
-      <GraphInsightsPanel data={graphInsights} loading={graphInsightsLoading} />
+      {activeTab === "risk" && (
+        <>
+          <SectionTitle>Risk Breakdown</SectionTitle>
+          <div className="grid grid-cols-[260px_1fr] gap-4">
+            <DonutChart counts={riskCounts} />
+            <DeptChart tools={tools} />
+          </div>
 
-      <SectionTitle>Attack Paths — Structural Reachability</SectionTitle>
-      <AttackPathPanel data={attackPaths} loading={attackPathsLoading} />
+          <SectionTitle>ROI &amp; Exposure Calculator</SectionTitle>
+          <RoiCalculator highRiskCount={riskCounts.High} />
 
-      <SectionTitle>Risk Changes — Since Last Scan</SectionTitle>
-      <RiskChangesPanel data={riskChanges} loading={riskChangesLoading} />
+          <SectionTitle>Access Graph — Data Categories &rarr; Risk Level</SectionTitle>
+          <AccessGraph tools={tools} />
 
-      <div ref={toolsTableRef}>
-        <SectionTitle>Discovered Tools</SectionTitle>
-        <ToolsTable
-          tools={tools}
-          onReload={reload}
-          riskFilter={riskFilter}
-          onClearRiskFilter={() => setRiskFilter("all")}
-        />
-      </div>
+          <SectionTitle>Graph Insights — Real Computed Metrics</SectionTitle>
+          <GraphInsightsPanel data={graphInsights} loading={graphInsightsLoading} />
+
+          <SectionTitle>Attack Paths — Structural Reachability</SectionTitle>
+          <AttackPathPanel data={attackPaths} loading={attackPathsLoading} />
+
+          <SectionTitle>Risk Changes — Since Last Scan</SectionTitle>
+          <RiskChangesPanel data={riskChanges} loading={riskChangesLoading} />
+        </>
+      )}
+
+      {activeTab === "license" && (
+        <>
+          <SectionTitle>
+            License &amp; Seat Waste{" "}
+            <span className="font-normal normal-case tracking-normal">(dormant tools still consuming a seat)</span>
+          </SectionTitle>
+          <LicenseWastePanel tools={tools} />
+        </>
+      )}
+
+      {activeTab === "tools" && (
+        <div ref={toolsTableRef}>
+          <SectionTitle>Discovered Tools</SectionTitle>
+          <ToolsTable
+            tools={tools}
+            onReload={reload}
+            riskFilter={riskFilter}
+            onClearRiskFilter={() => setRiskFilter("all")}
+          />
+        </div>
+      )}
     </div>
   );
 }
