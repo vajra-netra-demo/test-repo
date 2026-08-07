@@ -67,8 +67,11 @@ def health():
 
 
 # Mounted last so /health, /tools, /report, /discovery are matched first —
-# this serves the React dashboard (../frontend, built with `npm run build`)
-# at "/". Run the frontend build before starting this app locally, or this
-# mount will 404 with a missing-directory error — see frontend/README.md.
-STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+# this serves the React dashboard at "/". The build (frontend/, `npm run
+# build`) is committed here as plain static output rather than built by
+# Railway itself: this service's Root Directory is backend/, a sibling of
+# frontend/, so Railway's build can't see frontend/ to build it. Run
+# `npm run build` in frontend/ and copy dist/* here again after any
+# frontend change — see frontend/README.md.
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
