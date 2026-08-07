@@ -38,7 +38,7 @@ def get_scheduler_status() -> dict:
 def _loop():
     from app.database import SessionLocal
     from app.scan_pipeline import run_full_cycle
-    from app.manual_scan import mark_scheduled_scan_start, mark_scheduled_scan_end, progress_reporter
+    from app.manual_scan import mark_scheduled_scan_start, mark_scheduled_scan_end, progress_reporter, cancel_checker
 
     while True:
         time.sleep(_state["interval_seconds"])
@@ -46,10 +46,14 @@ def _loop():
         # Reports into manual_scan.py's shared _state — same progress
         # banner the dashboard polls for a button-triggered scan, so an
         # automatic re-scan shows up there too rather than running
-        # invisibly until it's done.
+        # invisibly until it's done. cancel_checker() means the same "Stop
+        # scan" button interrupts an automatic run too, not just a manual
+        # one — there's no separate "stop the scheduler's scan" control.
         mark_scheduled_scan_start()
         try:
-            result = run_full_cycle(db, triggered_by="scheduled", on_progress=progress_reporter())
+            result = run_full_cycle(
+                db, triggered_by="scheduled", on_progress=progress_reporter(), should_cancel=cancel_checker(),
+            )
             _state["last_status"] = "ok"
             mark_scheduled_scan_end(result=result)
         except Exception as e:

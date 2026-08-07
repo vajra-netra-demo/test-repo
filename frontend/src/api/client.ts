@@ -165,6 +165,7 @@ export const api = {
   getStatus: () => request<DiscoveryStatus>("/discovery/status"),
   getScanProgress: () => request<ScanProgress>("/discovery/scan-progress"),
   startLiveScan: () => request<{ status: string }>("/discovery/live-scan", { method: "POST" }),
+  cancelScan: () => request<{ status: string }>("/discovery/scan-cancel", { method: "POST" }),
   getEndpoints: () => request<EndpointDevice[]>("/discovery/endpoints"),
   getGraphInsights: (tenant?: string) =>
     request<GraphInsights>(`/discovery/access-graph-insights${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
