@@ -62,6 +62,16 @@ class SaaSTool(Base):
     # reassessed a second time yet (nothing to compare against).
     previous_risk_score = Column(Integer, nullable=True)
 
+    # Captured by scan_pipeline.py right before a live tool's row is
+    # replaced on each discovery cycle -- lets /discovery/permission-changes
+    # surface real permission creep (a tool that gained OAuth scopes it
+    # didn't have last scan, without anyone re-approving it). Only ever set
+    # for source="live" tools: sample data's scopes never change, and
+    # endpoint-agent tool ids aren't stable enough across runs to diff
+    # reliably (see routers/endpoint.py). Null means either never live-
+    # discovered before, or (for sample/endpoint tools) not tracked.
+    previous_oauth_scopes = Column(JSON, nullable=True)
+
     # Set via PATCH /tools/{id}/remediate once someone has acted on a finding.
     # A remediated tool's risk no longer counts against the readiness score.
     remediated = Column(Boolean, nullable=False, default=False)

@@ -56,6 +56,14 @@ def run_full_cycle(
 
     if live_scan_configured():
         live_tools = fetch_live_tools()
+        # Live tools are deleted and reinserted wholesale below (not updated
+        # in place), so "previous scopes" has to be captured before the
+        # delete and re-attached by id afterward -- the new row is a
+        # genuinely new object, not the same one risk_score's
+        # capture-before-overwrite pattern gets to rely on.
+        previous_scopes_by_id = {
+            t.id: t.oauth_scopes for t in db.query(SaaSTool).filter(SaaSTool.source == "live").all()
+        }
         db.query(SaaSTool).filter(SaaSTool.source == "live").delete()
         total_live = len(live_tools)
         for i, record in enumerate(live_tools, start=1):
@@ -87,6 +95,7 @@ def run_full_cycle(
                 triage_decision=triage["decision"], triage_reasoning=triage["reasoning"],
                 resolved_ip=geo["resolved_ip"], hosting_region_source=geo["hosting_region_source"],
                 tls_issuer_org=geo.get("tls_issuer_org"), tls_subject_org=geo.get("tls_subject_org"),
+                previous_oauth_scopes=previous_scopes_by_id.get(record["id"]),
             ))
             if risk["risk_score"] >= HIGH_RISK_THRESHOLD:
                 high_risk_live_findings.append({

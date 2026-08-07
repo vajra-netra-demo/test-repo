@@ -249,6 +249,25 @@ export interface RiskChanges {
   total_changes_found: number;
 }
 
+// GET /discovery/permission-changes — real OAuth scope diff using
+// previous_oauth_scopes, captured right before a live tool's row is
+// replaced on each discovery cycle. Only ever populated for live-sourced
+// tools (sample data's scopes never change; endpoint tool ids aren't
+// stable enough across runs to diff). A permission-creep signal: a tool
+// gaining scopes it didn't have last scan, without anyone re-approving it.
+export interface PermissionChange {
+  tool_id: string;
+  tool_name: string;
+  department: string;
+  scopes_added: string[];
+  scopes_removed: string[];
+  risk_score: number | null;
+}
+export interface PermissionChanges {
+  changes: PermissionChange[];
+  total_changes_found: number;
+}
+
 // GET /report/history
 export interface ReadinessHistoryPoint {
   timestamp: string;

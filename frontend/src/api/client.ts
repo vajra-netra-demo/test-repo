@@ -10,6 +10,7 @@ import type {
   EndpointDevice,
   GraphInsights,
   LoginResponse,
+  PermissionChanges,
   ReadinessHistoryPoint,
   RegulationSearchResult,
   RiskChanges,
@@ -174,6 +175,8 @@ export const api = {
     request<AttackPaths>(`/discovery/attack-paths${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
   getRiskChanges: (tenant?: string) =>
     request<RiskChanges>(`/discovery/risk-changes${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
+  getPermissionChanges: (tenant?: string) =>
+    request<PermissionChanges>(`/discovery/permission-changes${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
 
   // Employees (per-employee drill-down + offboarding — derived entirely
   // from EndpointDevice.employee, no separate employee directory exists)

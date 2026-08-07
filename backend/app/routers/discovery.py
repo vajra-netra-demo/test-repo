@@ -106,6 +106,48 @@ def risk_changes(tenant: Optional[str] = None, top_n: int = 20, db: Session = De
     return {"changes": changes[:top_n], "total_changes_found": len(changes)}
 
 
+@router.get("/permission-changes")
+def permission_changes(tenant: Optional[str] = None, top_n: int = 20, db: Session = Depends(get_db)):
+    """Real permission-creep detection: previous_oauth_scopes is captured
+    right before a live tool's row is replaced on each discovery cycle
+    (scan_pipeline.py), so this is a genuine diff against what that same
+    tool was actually granted last scan -- not an inferred or simulated
+    signal. Only ever populated for source="live" tools (sample data's
+    scopes never change; endpoint-agent tool ids aren't stable enough
+    across runs to diff reliably). A tool with no scope change, or no
+    previous_oauth_scopes yet (first time seen live), is excluded rather
+    than shown as a zero-change entry."""
+    query = db.query(SaaSTool).filter(
+        SaaSTool.previous_oauth_scopes.isnot(None),
+        SaaSTool.source == "live",
+    )
+    if tenant:
+        query = query.filter(SaaSTool.tenant == tenant)
+
+    changes = []
+    for t in query.all():
+        before = set(t.previous_oauth_scopes or [])
+        after = set(t.oauth_scopes or [])
+        added = sorted(after - before)
+        removed = sorted(before - after)
+        if not added and not removed:
+            continue
+        changes.append({
+            "tool_id": t.id,
+            "tool_name": t.tool_name,
+            "department": t.department,
+            "scopes_added": added,
+            "scopes_removed": removed,
+            "risk_score": t.risk_score,
+        })
+
+    # Permission creep (scopes gained) is the signal that matters most here
+    # -- a tool asking for MORE than it had is the escalation worth
+    # surfacing first; pure reductions sort after.
+    changes.sort(key=lambda c: (len(c["scopes_added"]), len(c["scopes_removed"])), reverse=True)
+    return {"changes": changes[:top_n], "total_changes_found": len(changes)}
+
+
 @router.post("/live-scan", dependencies=[Depends(require_admin)])
 def trigger_live_scan():
     if not is_configured():

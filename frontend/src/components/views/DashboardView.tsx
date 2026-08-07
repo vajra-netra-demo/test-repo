@@ -21,9 +21,10 @@ import { DataResidencyPanel } from "../dashboard/DataResidencyPanel";
 import { GraphInsightsPanel } from "../dashboard/GraphInsightsPanel";
 import { AttackPathPanel } from "../dashboard/AttackPathPanel";
 import { RiskChangesPanel } from "../dashboard/RiskChangesPanel";
+import { PermissionChangesPanel } from "../dashboard/PermissionChangesPanel";
 import { RiskAlertsModal } from "../dashboard/RiskAlertsModal";
 import { ToolsTable } from "../dashboard/ToolsTable";
-import type { AttackPaths, GraphInsights, RiskChanges } from "../../types";
+import type { AttackPaths, GraphInsights, PermissionChanges, RiskChanges } from "../../types";
 
 function counts(tools: SaaSTool[]): Record<RiskLevel, number> {
   return {
@@ -62,6 +63,8 @@ export function DashboardView() {
   const [attackPathsLoading, setAttackPathsLoading] = useState(true);
   const [riskChanges, setRiskChanges] = useState<RiskChanges | null>(null);
   const [riskChangesLoading, setRiskChangesLoading] = useState(true);
+  const [permissionChanges, setPermissionChanges] = useState<PermissionChanges | null>(null);
+  const [permissionChangesLoading, setPermissionChangesLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
   const [alertsModalFilter, setAlertsModalFilter] = useState<KpiFilter | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
@@ -129,6 +132,18 @@ export function DashboardView() {
     }
   }, []);
 
+  const loadPermissionChanges = useCallback(async (tenant: string) => {
+    setPermissionChangesLoading(true);
+    try {
+      setPermissionChanges(await api.getPermissionChanges(tenant || undefined));
+    } catch {
+      /* best-effort, same as risk changes/attack paths above */
+      setPermissionChanges(null);
+    } finally {
+      setPermissionChangesLoading(false);
+    }
+  }, []);
+
   const reload = useCallback(async () => {
     await Promise.all([
       loadTools(currentTenant),
@@ -136,8 +151,9 @@ export function DashboardView() {
       loadGraphInsights(currentTenant),
       loadAttackPaths(currentTenant),
       loadRiskChanges(currentTenant),
+      loadPermissionChanges(currentTenant),
     ]);
-  }, [currentTenant, loadTools, loadHistory, loadGraphInsights, loadAttackPaths, loadRiskChanges]);
+  }, [currentTenant, loadTools, loadHistory, loadGraphInsights, loadAttackPaths, loadRiskChanges, loadPermissionChanges]);
 
   useEffect(() => {
     loadStatus();
@@ -169,7 +185,8 @@ export function DashboardView() {
     loadGraphInsights(currentTenant);
     loadAttackPaths(currentTenant);
     loadRiskChanges(currentTenant);
-  }, [currentTenant, loadTools, loadGraphInsights, loadAttackPaths, loadRiskChanges]);
+    loadPermissionChanges(currentTenant);
+  }, [currentTenant, loadTools, loadGraphInsights, loadAttackPaths, loadRiskChanges, loadPermissionChanges]);
 
   useEffect(() => {
     loadHistory();
@@ -410,6 +427,9 @@ export function DashboardView() {
 
           <SectionTitle>Risk Changes — Since Last Scan</SectionTitle>
           <RiskChangesPanel data={riskChanges} loading={riskChangesLoading} />
+
+          <SectionTitle>Permission Changes — Real Scope Creep Detection</SectionTitle>
+          <PermissionChangesPanel data={permissionChanges} loading={permissionChangesLoading} />
         </>
       )}
 
