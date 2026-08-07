@@ -126,15 +126,18 @@ export interface DiscoveryStatus {
 }
 
 // GET /discovery/scan-progress
+export type ScanPhase = "idle" | "starting" | "discovering" | "assessing";
 export interface ScanProgress {
   running: boolean;
+  // Real per-tool progress (backend/app/scan_pipeline.py's on_progress
+  // callback) — current/total are 0 whenever the count for the current
+  // phase isn't known yet (e.g. "starting", or the Celery parallel path,
+  // which has no in-process counter to report from).
+  phase?: ScanPhase;
+  current?: number;
+  total?: number;
   last_error?: string | null;
   last_result?: { live_ingested: number; readiness_score: number } | null;
-  phase?: string;
-  processed?: number;
-  total?: number;
-  current_tool?: string | null;
-  cancelled?: boolean;
 }
 
 // GET /tools/{id}/attack-mapping

@@ -12,13 +12,6 @@ interface KpiRowProps {
 }
 
 export function KpiRow({ total, high, med, low, activeFilter, onFilterChange }: KpiRowProps) {
-  // Clicking the already-active card clears the filter (toggle), rather
-  // than requiring a separate "clear" control — matches how the ToolsTable
-  // tabs below behave for source filtering.
-  function toggle(filter: KpiFilter) {
-    onFilterChange(activeFilter === filter ? "all" : filter);
-  }
-
   return (
     <div className="grid grid-cols-4 gap-3.5">
       <KpiCard
@@ -38,7 +31,7 @@ export function KpiRow({ total, high, med, low, activeFilter, onFilterChange }: 
         glowClass="glow-high"
         ringClass="ring-high/40"
         active={activeFilter === "High"}
-        onClick={() => toggle("High")}
+        onClick={() => onFilterChange("High")}
       />
       <KpiCard
         num={med}
@@ -48,7 +41,7 @@ export function KpiRow({ total, high, med, low, activeFilter, onFilterChange }: 
         glowClass="glow-med"
         ringClass="ring-med/40"
         active={activeFilter === "Medium"}
-        onClick={() => toggle("Medium")}
+        onClick={() => onFilterChange("Medium")}
       />
       <KpiCard
         num={low}
@@ -58,7 +51,7 @@ export function KpiRow({ total, high, med, low, activeFilter, onFilterChange }: 
         glowClass="glow-low"
         ringClass="ring-low/40"
         active={activeFilter === "Low"}
-        onClick={() => toggle("Low")}
+        onClick={() => onFilterChange("Low")}
       />
     </div>
   );

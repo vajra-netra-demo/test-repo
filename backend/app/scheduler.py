@@ -38,15 +38,23 @@ def get_scheduler_status() -> dict:
 def _loop():
     from app.database import SessionLocal
     from app.scan_pipeline import run_full_cycle
+    from app.manual_scan import mark_scheduled_scan_start, mark_scheduled_scan_end, progress_reporter
 
     while True:
         time.sleep(_state["interval_seconds"])
         db = SessionLocal()
+        # Reports into manual_scan.py's shared _state — same progress
+        # banner the dashboard polls for a button-triggered scan, so an
+        # automatic re-scan shows up there too rather than running
+        # invisibly until it's done.
+        mark_scheduled_scan_start()
         try:
-            run_full_cycle(db, triggered_by="scheduled")
+            result = run_full_cycle(db, triggered_by="scheduled", on_progress=progress_reporter())
             _state["last_status"] = "ok"
+            mark_scheduled_scan_end(result=result)
         except Exception as e:
             _state["last_status"] = f"error: {e}"
+            mark_scheduled_scan_end(error=str(e))
         finally:
             db.close()
             _state["run_count"] += 1

@@ -7,7 +7,6 @@ import {
   MonitorSmartphone,
   ScanSearch,
   Scale,
-  ShieldCheck,
   Users,
 } from "lucide-react";
 import { useState, type ComponentType } from "react";
@@ -110,13 +109,6 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
           );
         })}
       </nav>
-
-      {!collapsed && (
-        <div className="mx-3 mb-3 flex items-center gap-2 rounded-lg border border-sidebar-good/20 bg-sidebar-good-bg px-3 py-2 text-[10.5px] font-semibold text-sidebar-good-text">
-          <ShieldCheck size={13} strokeWidth={2.25} className="shrink-0" />
-          Read-only discovery — no destructive action without confirmation
-        </div>
-      )}
 
       {/* Profile + sign out — moved down here from the top-of-screen header
           (App.tsx's UserMenu) so it lives with the rest of the account

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user, require_admin
 from app.database import get_db
 from app.discovery_provider import is_configured, active_provider
-from app.manual_scan import start_manual_scan, get_manual_scan_status, request_cancel
+from app.manual_scan import start_manual_scan, get_manual_scan_status
 from app.models import SaaSTool
 from app.scheduler import get_scheduler_status
 from app.siem.sentinel_connector import is_configured as sentinel_is_configured
@@ -63,17 +63,6 @@ def trigger_live_scan():
     if not start_manual_scan():
         raise HTTPException(status_code=409, detail="A scan is already in progress.")
     return {"status": "started"}
-
-
-@router.post("/scan-cancel", dependencies=[Depends(require_admin)])
-def cancel_scan():
-    """Cooperative cancel — the running scan checks this between tools and
-    stops promptly, keeping whatever it already assessed rather than
-    discarding it. Not instant: a tool assessment already in flight (a real
-    Claude API call) finishes before the loop checks again."""
-    if not request_cancel():
-        raise HTTPException(status_code=409, detail="No scan is currently running.")
-    return {"status": "cancel_requested"}
 
 
 @router.get("/scan-progress")

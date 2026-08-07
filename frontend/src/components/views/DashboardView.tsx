@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
-import type {
-  DiscoveryStatus,
-  ReadinessHistoryPoint,
-  RiskLevel,
-  SaaSTool,
-  ScanProgress,
-  TenantProfile,
-} from "../../types";
+import type { DiscoveryStatus, ReadinessHistoryPoint, RiskLevel, SaaSTool, ScanProgress, TenantProfile } from "../../types";
 import { riskLevel } from "../../lib/risk";
 import { useToast } from "../Toaster";
 import { DashboardTopBar } from "../dashboard/DashboardTopBar";
@@ -16,6 +9,7 @@ import { ScanProgressBanner } from "../dashboard/ScanProgressBanner";
 import { TenantBar } from "../dashboard/TenantBar";
 import { ReadinessGauge } from "../dashboard/ReadinessGauge";
 import { TrendChart } from "../dashboard/TrendChart";
+import { ScanHistoryTable } from "../dashboard/ScanHistoryTable";
 import { KpiRow, type KpiFilter } from "../dashboard/KpiRow";
 import { DonutChart } from "../dashboard/DonutChart";
 import { DeptChart } from "../dashboard/DeptChart";
@@ -42,7 +36,6 @@ export function DashboardView() {
   const [statusError, setStatusError] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
-  const [cancelling, setCancelling] = useState(false);
 
   const [tenantProfiles, setTenantProfiles] = useState<TenantProfile[]>([]);
   const [currentTenant, setCurrentTenant] = useState("");
@@ -138,22 +131,18 @@ export function DashboardView() {
         pollTimer.current = setTimeout(check, 5000);
         return;
       }
-      setScanProgress(data);
       if (data.running) {
-        // Faster cadence than the old 4s poll: with real phase/processed/
-        // total data now available, a tighter loop makes the progress feel
-        // live instead of visibly stepping every few seconds.
+        setScanProgress(data);
+        // Real per-tool progress ticks fast enough (each tool is a single
+        // DB write, or one LLM call in REAL mode) that a 4s poll would lag
+        // visibly behind — 1.2s keeps the bar/counter feeling live without
+        // hammering the endpoint.
         pollTimer.current = setTimeout(check, 1200);
         return;
       }
       setScanning(false);
-      setCancelling(false);
-      if (data.cancelled) {
-        showToast(
-          `Scan stopped — ${data.processed ?? 0}/${data.total ?? "?"} tools were assessed before stopping, kept as-is.`,
-          "info",
-        );
-      } else if (data.last_error) {
+      setScanProgress(null);
+      if (data.last_error) {
         showToast(`Live scan failed: ${data.last_error}`, "error");
       } else if (data.last_result) {
         showToast(
@@ -168,7 +157,7 @@ export function DashboardView() {
 
   async function runLiveScan() {
     setScanning(true);
-    setScanProgress(null);
+    setScanProgress({ running: true, phase: "starting", current: 0, total: 0 });
     try {
       await api.startLiveScan();
       showToast(
@@ -180,17 +169,7 @@ export function DashboardView() {
       const message = e instanceof ApiError ? e.message : String(e);
       showToast(`Live scan failed: ${message}`, "error");
       setScanning(false);
-    }
-  }
-
-  async function cancelScan() {
-    setCancelling(true);
-    try {
-      await api.cancelScan();
-    } catch (e) {
-      const message = e instanceof ApiError ? e.message : String(e);
-      showToast(`Stop request failed: ${message}`, "error");
-      setCancelling(false);
+      setScanProgress(null);
     }
   }
 
@@ -244,9 +223,7 @@ export function DashboardView() {
         onDownloadReport={downloadEvidenceReport}
       />
 
-      {scanning && (
-        <ScanProgressBanner progress={scanProgress} onCancel={cancelScan} cancelling={cancelling} />
-      )}
+      {scanning && <ScanProgressBanner progress={scanProgress} />}
 
       <TenantBar profiles={tenantProfiles} currentTenant={currentTenant} onChange={setCurrentTenant} />
 
@@ -258,6 +235,12 @@ export function DashboardView() {
         <span className="font-normal normal-case tracking-normal">(one point per scan — manual or scheduled)</span>
       </SectionTitle>
       <TrendChart history={history} />
+
+      <SectionTitle>
+        Scan History{" "}
+        <span className="font-normal normal-case tracking-normal">(click a row for details)</span>
+      </SectionTitle>
+      <ScanHistoryTable history={history} />
 
       <SectionTitle>Risk Summary</SectionTitle>
       <KpiRow
