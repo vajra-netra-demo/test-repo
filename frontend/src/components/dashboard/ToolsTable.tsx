@@ -61,9 +61,15 @@ export function ToolsTable({ tools, onReload, riskFilter, onClearRiskFilter }: T
     return [...filtered].sort((a, b) => {
       let av: string | number = a[sortKey] ?? "";
       let bv: string | number = b[sortKey] ?? "";
-      if (typeof av === "string") {
+      // Only lowercase when BOTH sides are strings -- risk_score is numeric
+      // but null for a not-yet-assessed tool, and the ?? "" fallback above
+      // turns that null into a string while a real score on the other side
+      // stays a number. Calling .toLowerCase() on that number crashed the
+      // whole table (risk_score is the default sort column, so this fired
+      // on page load for any tenant with even one unassessed tool).
+      if (typeof av === "string" && typeof bv === "string") {
         av = av.toLowerCase();
-        bv = (bv as string).toLowerCase();
+        bv = bv.toLowerCase();
       }
       if (av === bv) return 0;
       return av > bv ? sortDir : -sortDir;
