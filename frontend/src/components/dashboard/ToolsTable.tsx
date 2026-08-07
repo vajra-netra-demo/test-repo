@@ -121,6 +121,13 @@ export function ToolsTable({ tools, onReload, riskFilter, onClearRiskFilter }: T
             <tr>
               <SortableHeader label="Tool" sortKey="tool_name" active={sortKey} onSort={onSort} />
               <SortableHeader label="Department" sortKey="department" active={sortKey} onSort={onSort} />
+              {/* Surfaced here (not just in the expanded row) so "where does
+                  this tool's data live" is visible at a glance — the same
+                  real hosting_region/hosting_region_source data the Data
+                  Residency panel aggregates. */}
+              <th className="border-b border-border bg-tint/[0.02] px-3.5 py-2.75 text-left text-[10.5px] font-bold uppercase tracking-wide text-muted">
+                Hosting
+              </th>
               {/* Not independently sortable — Risk level is just a bucketed
                   view of Score (same underlying value), so it shares
                   Score's sort rather than getting its own SortableHeader.
@@ -131,16 +138,19 @@ export function ToolsTable({ tools, onReload, riskFilter, onClearRiskFilter }: T
                 Risk
               </th>
               <SortableHeader label="Score" sortKey="risk_score" active={sortKey} onSort={onSort} />
+              <SortableHeader label="Triage Agent" sortKey="triage_decision" active={sortKey} onSort={onSort} />
+              {/* Moved after Triage Agent — usually "—" for the common
+                  Low-risk case, so it reads better as the last, most-
+                  detailed column rather than crowding the glanceable ones. */}
               <th className="border-b border-border bg-tint/[0.02] px-3.5 py-2.75 text-left text-[10.5px] font-bold uppercase tracking-wide text-muted">
                 Flags
               </th>
-              <SortableHeader label="Triage Agent" sortKey="triage_decision" active={sortKey} onSort={onSort} />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-10 text-center text-muted">
+                <td colSpan={7} className="p-10 text-center text-muted">
                   No tools found.
                 </td>
               </tr>
@@ -279,11 +289,37 @@ function ToolRow({
           )}
         </td>
         <td className="border-b border-border px-3.5 py-2.75 text-[13px] text-text">{tool.department}</td>
+        <td className="border-b border-border px-3.5 py-2.75 text-[13px] text-text">
+          {tool.source === "endpoint" ? (
+            <span className="text-muted">—</span>
+          ) : (
+            <>
+              {tool.hosting_region}
+              {tool.hosting_region_source === "geoip-lookup" && (
+                <span
+                  className="ml-1.5 rounded px-1.5 py-0.25 text-[9.5px] font-bold uppercase tracking-wide text-faint"
+                  title="Resolved via real DNS + GeoIP lookup against the vendor's actual domain — not a self-reported value. CDN-fronted domains geolocate to the nearest edge, not necessarily the vendor's true origin."
+                >
+                  DNS/GeoIP
+                </span>
+              )}
+            </>
+          )}
+        </td>
         <td className="border-b border-border px-3.5 py-2.75 text-[13px]">
           {level ? <RiskBadge level={level} /> : "—"}
         </td>
         <td className="border-b border-border px-3.5 py-2.75 text-[13px] font-mono text-text">
           {tool.risk_score ?? "—"}
+        </td>
+        <td className="border-b border-border px-3.5 py-2.75 text-[13px]">
+          {tool.triage_decision ? (
+            <span className={`inline-block rounded px-2.5 py-0.75 text-[11px] font-bold ${TRIAGE_CLASSES[tool.triage_decision] ?? ""}`}>
+              {tool.triage_decision}
+            </span>
+          ) : (
+            "—"
+          )}
         </td>
         <td className="border-b border-border px-3.5 py-2.75 text-[13px]">
           {tool.risk_flags && tool.risk_flags.length > 0
@@ -297,19 +333,10 @@ function ToolRow({
               ))
             : "—"}
         </td>
-        <td className="border-b border-border px-3.5 py-2.75 text-[13px]">
-          {tool.triage_decision ? (
-            <span className={`inline-block rounded px-2.5 py-0.75 text-[11px] font-bold ${TRIAGE_CLASSES[tool.triage_decision] ?? ""}`}>
-              {tool.triage_decision}
-            </span>
-          ) : (
-            "—"
-          )}
-        </td>
       </tr>
       {expanded && (
         <tr className="bg-tint/[0.02]">
-          <td colSpan={6} className="border-b border-border px-3.5 py-2.75 text-[13px] text-muted">
+          <td colSpan={7} className="border-b border-border px-3.5 py-2.75 text-[13px] text-muted">
             <div className="mb-2 leading-relaxed text-text">
               {tool.risk_reasoning || "Not yet assessed — run the Day 3 risk assessment."}
             </div>
@@ -320,20 +347,6 @@ function ToolRow({
               <strong className="text-text">Data accessed:</strong> {(tool.data_categories_accessed || []).join(", ") || "—"}
             </div>
             <div>
-              <strong className="text-text">Hosting:</strong> {tool.hosting_region}
-              {tool.hosting_region_source !== "declared" && (
-                <span
-                  className="ml-1.5 rounded px-1.5 py-0.25 text-[9.5px] font-bold uppercase tracking-wide text-faint"
-                  title={
-                    tool.hosting_region_source === "geoip-lookup"
-                      ? "Resolved via real DNS + GeoIP lookup against the vendor's actual domain — not a self-reported value. CDN-fronted domains geolocate to the nearest edge, not necessarily the vendor's true origin."
-                      : "DNS resolution or GeoIP lookup failed — hosting region is genuinely unknown, not guessed."
-                  }
-                >
-                  {tool.hosting_region_source === "geoip-lookup" ? "DNS/GeoIP" : "unresolved"}
-                </span>
-              )}
-              {" · "}
               <strong className="text-text">Last used:</strong> {tool.last_used}
             </div>
             {tool.resolved_ip && (
