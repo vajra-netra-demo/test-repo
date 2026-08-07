@@ -23,15 +23,30 @@ from app.siem.splunk_connector import push_findings as push_to_splunk
 HIGH_RISK_THRESHOLD = 70
 
 
-def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
+def _noop_progress(phase, processed, total, current_tool=None):
+    pass
+
+
+def _noop_cancel():
+    return False
+
+
+def run_full_cycle(db: Session, triggered_by: str = "manual", on_progress=None, should_cancel=None) -> dict:
+    on_progress = on_progress or _noop_progress
+    should_cancel = should_cancel or _noop_cancel
     live_ingested = 0
 
     high_risk_live_findings = []
 
     if live_scan_configured():
+        on_progress("discovering", 0, 0)
         live_tools = fetch_live_tools()
         db.query(SaaSTool).filter(SaaSTool.source == "live").delete()
-        for record in live_tools:
+        for i, record in enumerate(live_tools):
+            if should_cancel():
+                break
+            on_progress("assessing-live", i, len(live_tools), record["tool_name"])
+            live_ingested = i + 1
             # Real DNS + IP geolocation on the app's own vendor/slug — an
             # honest substitute for real network-tap capture (see
             # app/network_intel.py). Only attempted for live tools, since
@@ -63,7 +78,6 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
                     "risk_score": risk["risk_score"],
                     "risk_flags": risk["risk_flags"],
                 })
-        live_ingested = len(live_tools)
         db.commit()
 
         if high_risk_live_findings:
@@ -71,6 +85,7 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
 
     # Re-assess every tool (sample + live + endpoint) so nothing is ever left stale.
     all_tools = db.query(SaaSTool).all()
+    on_progress("assessing-all", 0, len(all_tools))
 
     from app.tasks import is_configured as celery_configured
     if celery_configured() and all_tools:
@@ -79,15 +94,36 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
         # commits its own row via its own DB session, so this session's
         # copies are stale afterward -- expire and re-fetch rather than
         # trust the in-memory `all_tools` objects.
+        import time
         from celery import group
         from app.tasks import assess_and_store_tool
 
         job = group(assess_and_store_tool.s(t.id) for t in all_tools).apply_async()
-        job.get(timeout=300, propagate=False)
+        total = len(all_tools)
+        waited = 0
+        cancelled_mid_flight = False
+        while not job.ready() and waited < 300:
+            if should_cancel():
+                # Tasks already dispatched keep running in the worker and
+                # each commits its own row independently -- safe to stop
+                # waiting on them rather than revoke mid-write. We just stop
+                # blocking this request on the remainder.
+                cancelled_mid_flight = True
+                break
+            done = sum(1 for r in job.results if r.ready())
+            on_progress("assessing-all-parallel", done, total)
+            time.sleep(1)
+            waited += 1
+        if not cancelled_mid_flight:
+            job.get(timeout=max(1, 300 - waited), propagate=False)
+            on_progress("assessing-all-parallel", total, total)
         db.expire_all()
         all_tools = db.query(SaaSTool).all()
     else:
-        for t in all_tools:
+        for i, t in enumerate(all_tools):
+            if should_cancel():
+                break
+            on_progress("assessing-all", i, len(all_tools), t.tool_name)
             risk = assess_tool(_tool_to_dict(t))
             t.risk_score = risk["risk_score"]
             t.risk_flags = risk["risk_flags"]
@@ -98,6 +134,7 @@ def run_full_cycle(db: Session, triggered_by: str = "manual") -> dict:
             t.triage_decision = triage["decision"]
             t.triage_reasoning = triage["reasoning"]
         db.commit()
+    on_progress("finalizing", len(all_tools), len(all_tools))
 
     # Push the complete current High-risk picture (every source, not just
     # newly-discovered live findings) into the real Sentinel workspace, so a

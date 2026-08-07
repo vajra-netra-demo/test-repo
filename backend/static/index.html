@@ -10,10 +10,32 @@
     --med: #d68c1f; --med-bg: #fff4e0; --med-dark: #9a6212;
     --low: #2e9e5b; --low-bg: #e7f7ee; --low-dark: #1e6e3e;
     --border: #e5e8ee; --text: #182035; --muted: #6b7280; --bg: #f4f6fb;
-    --accent: #2e5aa8; --accent-dark: #1f3f7a; --accent-light: #eaf1fc;
-    --sidebar: #101a33; --sidebar-hover: #1c2947;
+    --accent: #534ab7; --accent-dark: #3c3489; --accent-light: #eeedfe;
+    --sidebar: #191233; --sidebar-hover: #2a2050;
     --card: #ffffff;
+    --purple: #534ab7; --purple-bg: #eeedfe; --purple-dark: #3c3489;
+    --teal: #0f6e56; --teal-bg: #e1f5ee; --teal-dark: #085041;
+    --coral: #993c1d; --coral-bg: #faece7; --coral-dark: #712b13;
+    --pink: #993556; --pink-bg: #fbeaf0; --pink-dark: #72243e;
   }
+  .chip-rotate-0 { background: var(--purple-bg); color: var(--purple-dark); }
+  .chip-rotate-1 { background: var(--teal-bg); color: var(--teal-dark); }
+  .chip-rotate-2 { background: var(--coral-bg); color: var(--coral-dark); }
+  .chip-rotate-3 { background: var(--pink-bg); color: var(--pink-dark); }
+  .kpi-card.total { --kpi-color: var(--purple); } .kpi-card.total .num { color: var(--purple); }
+  .dept-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: 999px; margin: 0 6px 6px 0; }
+
+  /* ---------- Live scan panel ---------- */
+  .scan-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; gap: 20px; }
+  .scan-ring-wrap { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+  .scan-ring-wrap .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--text); }
+  .scan-body { flex: 1; min-width: 0; }
+  .scan-phase-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .scan-phase-label { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .scan-feed { margin-top: 8px; font-size: 12px; color: var(--muted); min-height: 20px; max-height: 90px; overflow-y: auto; line-height: 1.8; }
+  .scan-feed-item { opacity: 0; animation: feed-in 0.3s ease-out forwards; }
+  .scan-feed-item .chk { color: var(--teal); font-weight: 800; margin-right: 6px; }
+  @keyframes feed-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -305,6 +327,24 @@
       <div class="story" id="tenantStory"></div>
     </div>
 
+    <div class="scan-panel" id="scanPanel" style="display:none;">
+      <div class="scan-ring-wrap">
+        <svg id="scanRing" width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="var(--purple-bg)" stroke-width="6"/>
+          <circle id="scanRingProgress" cx="36" cy="36" r="30" fill="none" stroke="var(--purple)" stroke-width="6"
+            stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5" style="transition:stroke-dashoffset .25s linear"/>
+        </svg>
+        <div class="pct" id="scanPct">0%</div>
+      </div>
+      <div class="scan-body">
+        <div class="scan-phase-row">
+          <span class="scan-phase-label" id="scanPhaseLabel">Idle</span>
+          <button class="secondary" id="scanCancelBtn" style="padding:5px 12px; font-size:12px; display:none;">Stop scan</button>
+        </div>
+        <div class="scan-feed" id="scanFeed"></div>
+      </div>
+    </div>
+
     <div class="section-title">DPDP Readiness Score</div>
     <div class="readiness-panel">
       <svg id="readinessGauge" width="110" height="110" viewBox="0 0 110 110"></svg>
@@ -324,7 +364,7 @@
 
     <div class="section-title">Risk Summary</div>
     <div class="kpi-row">
-      <div class="kpi-card"><div class="num" id="totalCount">–</div><div class="label">Total Tools Discovered</div></div>
+      <div class="kpi-card total"><div class="num" id="totalCount">–</div><div class="label">Total Tools Discovered</div></div>
       <div class="kpi-card high"><div class="num" id="highCount">–</div><div class="label">High Risk</div></div>
       <div class="kpi-card med"><div class="num" id="medCount">–</div><div class="label">Medium Risk</div></div>
       <div class="kpi-card low"><div class="num" id="lowCount">–</div><div class="label">Low Risk</div></div>
@@ -341,6 +381,7 @@
       </div>
       <div class="panel">
         <h3>By Department</h3>
+        <div id="deptChips" style="margin-bottom:10px;"></div>
         <div id="deptChart"></div>
       </div>
     </div>
@@ -915,10 +956,59 @@
       }
     }
 
+    const SCAN_PHASE_LABELS = {
+      idle: "Idle",
+      starting: "Starting scan…",
+      discovering: "Discovering via " + "live sources…",
+      "assessing-live": "Scoring newly discovered tools…",
+      "assessing-all": "Scoring all tools…",
+      "assessing-all-parallel": "Scoring all tools (parallel via Celery)…",
+      finalizing: "Finalizing and saving snapshot…",
+    };
+    const SCAN_RING_CIRCUMFERENCE = 2 * Math.PI * 30;
+    let scanFeedSeen = 0;
+
+    function setScanRing(pct) {
+      const offset = SCAN_RING_CIRCUMFERENCE - (Math.min(100, Math.max(0, pct)) / 100) * SCAN_RING_CIRCUMFERENCE;
+      document.getElementById("scanRingProgress").style.strokeDashoffset = offset;
+      document.getElementById("scanPct").textContent = Math.round(pct) + "%";
+    }
+
+    function addScanFeedItem(text) {
+      const feed = document.getElementById("scanFeed");
+      const el = document.createElement("div");
+      el.className = "scan-feed-item";
+      el.innerHTML = `<span class="chk">&#10003;</span>${text}`;
+      feed.prepend(el);
+      while (feed.children.length > 6) feed.removeChild(feed.lastChild);
+    }
+
+    async function cancelLiveScan() {
+      const cancelBtn = document.getElementById("scanCancelBtn");
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = "Stopping…";
+      try {
+        await fetch(apiUrl("/discovery/scan-cancel"), { method: "POST" });
+      } catch (e) {
+        showToast("Stop request failed: " + e, "error");
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = "Stop scan";
+      }
+    }
+
     async function runLiveScan() {
       const btn = document.getElementById("scanBtn");
+      const cancelBtn = document.getElementById("scanCancelBtn");
       btn.disabled = true;
       btn.textContent = "Starting…";
+      cancelBtn.disabled = false;
+      cancelBtn.textContent = "Stop scan";
+      cancelBtn.style.display = "inline-flex";
+      document.getElementById("scanPanel").style.display = "flex";
+      document.getElementById("scanFeed").innerHTML = "";
+      scanFeedSeen = 0;
+      setScanRing(0);
+      document.getElementById("scanPhaseLabel").textContent = "Starting scan…";
       try {
         const res = await fetch(apiUrl("/discovery/live-scan"), { method: "POST" });
         const data = await res.json();
@@ -929,7 +1019,6 @@
           return;
         }
         btn.textContent = "Scanning… (running in background)";
-        showToast("Live scan started — this can take a few minutes for a large tool count. You can keep using the dashboard meanwhile.", "info");
         pollScanProgress();
       } catch (e) {
         showToast("Live scan request failed: " + e, "error");
@@ -946,18 +1035,40 @@
           const res = await fetch(apiUrl("/discovery/scan-progress"));
           data = await res.json();
         } catch (e) {
-          setTimeout(check, 5000);
+          setTimeout(check, 3000);
           return;
         }
+
+        const total = data.total || 0;
+        const processed = data.processed || 0;
+        const pct = total > 0 ? (processed / total) * 100 : (data.phase === "discovering" ? 5 : 0);
+        setScanRing(pct);
+        document.getElementById("scanPhaseLabel").textContent =
+          SCAN_PHASE_LABELS[data.phase] || data.phase || "Working…";
+        if (data.current_tool && processed > scanFeedSeen) {
+          addScanFeedItem(`Scored <strong>${data.current_tool}</strong> (${processed}/${total})`);
+          scanFeedSeen = processed;
+        }
+
         if (data.running) {
-          setTimeout(check, 4000);
+          setTimeout(check, 1200);
           return;
         }
+
         btn.disabled = false;
         btn.innerHTML = "&#8635; Run Live Scan";
-        if (data.last_error) {
+        document.getElementById("scanCancelBtn").style.display = "none";
+        if (data.cancelled) {
+          document.getElementById("scanPhaseLabel").textContent = "Stopped";
+          addScanFeedItem(`Stopped early — ${processed}/${total || "?"} tools were assessed before stopping, kept as-is.`);
+          showToast("Scan stopped — everything assessed before the stop was kept.", "info");
+        } else if (data.last_error) {
+          document.getElementById("scanPhaseLabel").textContent = "Failed";
           showToast("Live scan failed: " + data.last_error, "error");
         } else if (data.last_result) {
+          setScanRing(100);
+          document.getElementById("scanPhaseLabel").textContent = "Complete";
+          addScanFeedItem(`Done — ${data.last_result.total_tools} tools assessed, readiness ${data.last_result.readiness_score}/100`);
           showToast(`Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`, "success");
         }
         loadTools();
@@ -1243,12 +1354,19 @@
         if (level) byDept[t.department][level]++;
       });
       const maxTotal = Math.max(1, ...Object.values(byDept).map(d => d.High + d.Medium + d.Low));
-      const container = document.getElementById("deptChart");
-      container.innerHTML = Object.entries(byDept).sort((a, b) => {
+      const sortedDepts = Object.entries(byDept).sort((a, b) => {
         const totalA = a[1].High + a[1].Medium + a[1].Low;
         const totalB = b[1].High + b[1].Medium + b[1].Low;
         return totalB - totalA;
-      }).map(([dept, counts]) => {
+      });
+
+      document.getElementById("deptChips").innerHTML = sortedDepts.map(([dept, counts], i) => {
+        const total = counts.High + counts.Medium + counts.Low;
+        return `<span class="dept-chip chip-rotate-${i % 4}">${dept} <strong>${total}</strong></span>`;
+      }).join("") || "";
+
+      const container = document.getElementById("deptChart");
+      container.innerHTML = sortedDepts.map(([dept, counts]) => {
         const total = counts.High + counts.Medium + counts.Low;
         const widthPct = (v) => total ? (v / maxTotal * 100) : 0;
         return `
@@ -1450,6 +1568,7 @@
     });
 
     document.getElementById("scanBtn").addEventListener("click", runLiveScan);
+    document.getElementById("scanCancelBtn").addEventListener("click", cancelLiveScan);
     document.getElementById("reportBtn").addEventListener("click", downloadReport);
     document.getElementById("csvBtn").addEventListener("click", downloadCsv);
     document.getElementById("tenantSelect").addEventListener("change", (e) => {
