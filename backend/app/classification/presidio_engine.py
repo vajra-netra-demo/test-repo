@@ -71,7 +71,13 @@ RELEVANT_ENTITIES = [
 
 
 def _mask_span(matched: str) -> str:
-    return matched[:2] + "•" * max(len(matched) - 4, 0) + matched[-2:] if len(matched) > 4 else "•" * len(matched)
+    # Plain ASCII "*" rather than a bullet character -- a Unicode mask
+    # character round-tripping through a shell/console into the database
+    # is exactly the kind of thing that can come out mojibake'd depending
+    # on that path's locale/encoding, which happened once already. "*" has
+    # no encoding to get wrong, and is the conventional masking character
+    # anyway (credit-card-style "**** **** **** 1234").
+    return matched[:2] + "*" * max(len(matched) - 4, 0) + matched[-2:] if len(matched) > 4 else "*" * len(matched)
 
 
 def mask_text(text: str, results) -> str:
