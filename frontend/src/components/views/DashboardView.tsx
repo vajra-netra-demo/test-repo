@@ -9,6 +9,7 @@ import { ScanProgressBanner } from "../dashboard/ScanProgressBanner";
 import { TenantBar } from "../dashboard/TenantBar";
 import { ReadinessGauge } from "../dashboard/ReadinessGauge";
 import { TrendChart } from "../dashboard/TrendChart";
+import { ScanHistoryTable } from "../dashboard/ScanHistoryTable";
 import { KpiRow, type KpiFilter } from "../dashboard/KpiRow";
 import { DonutChart } from "../dashboard/DonutChart";
 import { DeptChart } from "../dashboard/DeptChart";
@@ -234,6 +235,12 @@ export function DashboardView() {
         <span className="font-normal normal-case tracking-normal">(one point per scan — manual or scheduled)</span>
       </SectionTitle>
       <TrendChart history={history} />
+
+      <SectionTitle>
+        Scan History{" "}
+        <span className="font-normal normal-case tracking-normal">(click a row for details)</span>
+      </SectionTitle>
+      <ScanHistoryTable history={history} />
 
       <SectionTitle>Risk Summary</SectionTitle>
       <KpiRow
