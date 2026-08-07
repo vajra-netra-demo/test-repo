@@ -33,6 +33,13 @@ export function ReadinessGauge({ tools }: { tools: SaaSTool[] }) {
   // Sweeps the arc in from 0 and counts the number up in lockstep, driven
   // by one rAF loop (not a CSS transition on stroke-dashoffset, which is
   // fine for the arc alone but can't also drive the text number in sync).
+  // Browsers pause rAF callbacks entirely while a tab is hidden/unfocused
+  // (e.g. opened in a background tab) -- if that happens mid-animation,
+  // the loop never gets another callback and `display` was getting stuck
+  // at its initial 0 forever, showing "0/100" while the label next to it
+  // correctly said the real score. The timeout below is a floor: it
+  // forces the correct value shortly after mount regardless of whether
+  // the rAF loop ever ran to completion.
   const [display, setDisplay] = useState(0);
   useEffect(() => {
     if (assessed.length === 0) {
@@ -49,7 +56,11 @@ export function ReadinessGauge({ tools }: { tools: SaaSTool[] }) {
       if (t < 1) raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const floor = setTimeout(() => setDisplay(score), duration + 100);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(floor);
+    };
   }, [score, assessed.length]);
 
   if (assessed.length === 0) {
