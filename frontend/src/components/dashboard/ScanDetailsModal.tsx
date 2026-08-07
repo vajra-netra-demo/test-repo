@@ -2,6 +2,8 @@ import { X } from "lucide-react";
 import type { ReadinessHistoryPoint } from "../../types";
 import { Modal } from "../Modal";
 import { DonutChart } from "./DonutChart";
+import { formatDuration } from "../../lib/duration";
+import { formatTimestamp } from "../../lib/datetime";
 
 const TRIGGER_LABEL: Record<string, string> = {
   manual: "Manually triggered — Run Live Scan button",
@@ -23,7 +25,7 @@ export function ScanDetailsModal({ scan, onClose }: { scan: ReadinessHistoryPoin
         <div className="min-w-0">
           <div className="text-[16px] font-bold text-text">Scan Details</div>
           <div className="truncate text-[12px] text-muted">
-            {scan.timestamp} &middot; {TRIGGER_LABEL[scan.triggered_by] ?? scan.triggered_by}
+            {formatTimestamp(scan.timestamp)} &middot; {TRIGGER_LABEL[scan.triggered_by] ?? scan.triggered_by}
           </div>
         </div>
         <button
@@ -36,7 +38,7 @@ export function ScanDetailsModal({ scan, onClose }: { scan: ReadinessHistoryPoin
       </div>
 
       <div className="p-6">
-        <div className="mb-4 grid grid-cols-2 gap-3.5">
+        <div className="mb-4 grid grid-cols-3 gap-3.5">
           <div className="glass rounded-lg p-3.5 px-4">
             <div className="font-mono text-[22px] font-semibold tabular-nums text-accent">
               {scan.readiness_score ?? "—"}
@@ -47,6 +49,12 @@ export function ScanDetailsModal({ scan, onClose }: { scan: ReadinessHistoryPoin
           <div className="glass rounded-lg p-3.5 px-4">
             <div className="font-mono text-[22px] font-semibold tabular-nums text-text">{scan.total_tools}</div>
             <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Tools Assessed</div>
+          </div>
+          <div className="glass rounded-lg p-3.5 px-4">
+            <div className="font-mono text-[22px] font-semibold tabular-nums text-text">
+              {scan.duration_seconds !== null ? formatDuration(scan.duration_seconds) : "—"}
+            </div>
+            <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Duration</div>
           </div>
         </div>
 

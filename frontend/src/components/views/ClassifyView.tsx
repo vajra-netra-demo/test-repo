@@ -6,6 +6,7 @@ import { RiskBadge } from "../Badge";
 import { Pagination } from "../Pagination";
 import { usePagination } from "../../hooks/usePagination";
 import type { RiskLevel } from "../../types";
+import { formatTimestamp } from "../../lib/datetime";
 
 function sensitivityLevel(score: number): RiskLevel {
   return score >= 70 ? "High" : score >= 30 ? "Medium" : "Low";
@@ -152,7 +153,7 @@ export function ClassifyView() {
                 const level = sensitivityLevel(s.sensitivity_score);
                 return (
                   <tr key={s.id} className="transition-colors hover:bg-tint/[0.03]">
-                    <Td>{s.timestamp}</Td>
+                    <Td>{formatTimestamp(s.timestamp)}</Td>
                     <Td>{s.label || "—"}</Td>
                     <Td>
                       {total} entit{total === 1 ? "y" : "ies"}

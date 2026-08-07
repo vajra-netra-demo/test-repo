@@ -3,6 +3,8 @@ import type { ReadinessHistoryPoint } from "../../types";
 import { Pagination } from "../Pagination";
 import { usePagination } from "../../hooks/usePagination";
 import { ScanDetailsModal } from "./ScanDetailsModal";
+import { formatDuration } from "../../lib/duration";
+import { formatTimestamp } from "../../lib/datetime";
 
 const TRIGGER_LABEL: Record<string, string> = {
   manual: "Manual",
@@ -26,7 +28,7 @@ export function ScanHistoryTable({ history }: { history: ReadinessHistoryPoint[]
         <table className="w-full border-collapse">
           <thead>
             <tr>
-              {["Date & Time", "Triggered By", "Readiness", "Total Tools", "High", "Medium", "Low"].map((h) => (
+              {["Date & Time", "Triggered By", "Readiness", "Duration", "Total Tools", "High", "Medium", "Low"].map((h) => (
                 <th
                   key={h}
                   className="border-b border-border bg-tint/[0.02] px-3.5 py-2.75 text-left text-[10.5px] font-bold uppercase tracking-wide text-muted"
@@ -39,7 +41,7 @@ export function ScanHistoryTable({ history }: { history: ReadinessHistoryPoint[]
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-10 text-center text-muted">
+                <td colSpan={8} className="p-10 text-center text-muted">
                   No scans recorded yet — run a manual scan or wait for the scheduled re-scan.
                 </td>
               </tr>
@@ -51,7 +53,9 @@ export function ScanHistoryTable({ history }: { history: ReadinessHistoryPoint[]
                   title="Click to view scan details"
                   className="cursor-pointer transition-colors hover:bg-accent-light/60"
                 >
-                  <td className="border-b border-border px-3.5 py-2.75 text-[13px] text-text">{s.timestamp}</td>
+                  <td className="border-b border-border px-3.5 py-2.75 text-[13px] text-text">
+                    {formatTimestamp(s.timestamp)}
+                  </td>
                   <td className="border-b border-border px-3.5 py-2.75 text-[13px]">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
@@ -63,6 +67,9 @@ export function ScanHistoryTable({ history }: { history: ReadinessHistoryPoint[]
                   </td>
                   <td className="border-b border-border px-3.5 py-2.75 text-[13px] font-mono font-semibold text-text">
                     {s.readiness_score ?? "—"}
+                  </td>
+                  <td className="border-b border-border px-3.5 py-2.75 text-[13px] font-mono text-muted">
+                    {s.duration_seconds !== null ? formatDuration(s.duration_seconds) : "—"}
                   </td>
                   <td className="border-b border-border px-3.5 py-2.75 text-[13px] text-text">{s.total_tools}</td>
                   <td className="border-b border-border px-3.5 py-2.75 text-[13px] font-mono text-high">{s.high_count}</td>

@@ -143,7 +143,15 @@ export interface ScanProgress {
   // the UI show "Stopping…" instead of looking like the click did nothing.
   cancel_requested?: boolean;
   last_error?: string | null;
-  last_result?: { live_ingested: number; readiness_score: number; cancelled?: boolean } | null;
+  last_result?: {
+    live_ingested: number;
+    readiness_score: number;
+    cancelled?: boolean;
+    // Real wall-clock elapsed time for the scan+assess cycle (scan_pipeline.py's
+    // time.monotonic() measurement) — not derived from started_at/finished_at,
+    // which only have second precision and include dashboard-poll overhead.
+    duration_seconds?: number;
+  } | null;
 }
 
 // GET /tools/{id}/attack-mapping
@@ -250,4 +258,7 @@ export interface ReadinessHistoryPoint {
   high_count: number;
   medium_count: number;
   low_count: number;
+  // Real elapsed time for that scan+assess cycle — null for snapshots
+  // recorded before this column existed.
+  duration_seconds: number | null;
 }

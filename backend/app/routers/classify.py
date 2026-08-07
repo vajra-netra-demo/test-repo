@@ -8,7 +8,7 @@ endpoint a demo can use to show real detection on a real sample, not an
 automated document scanner. Don't imply otherwise in a demo.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends
@@ -35,7 +35,7 @@ def classify(body: ClassifyTextRequest, db: Session = Depends(get_db)):
     scan = ClassificationScan(
         tenant=body.tenant,
         label=body.label,
-        timestamp=datetime.now().isoformat(timespec="seconds"),
+        timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         entity_counts=result["entity_counts"],
         sensitivity_score=result["sensitivity_score"],
         snippet=snippet,

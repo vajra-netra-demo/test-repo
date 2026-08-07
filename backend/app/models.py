@@ -155,3 +155,7 @@ class ScanSnapshot(Base):
     high_count = Column(Integer, nullable=False, default=0)
     medium_count = Column(Integer, nullable=False, default=0)
     low_count = Column(Integer, nullable=False, default=0)
+    # Real wall-clock elapsed time for the scan+assess cycle itself (measured
+    # via time.monotonic() in scan_pipeline.py, not derived from timestamp
+    # strings) — null for snapshots recorded before this column existed.
+    duration_seconds = Column(Integer, nullable=True)

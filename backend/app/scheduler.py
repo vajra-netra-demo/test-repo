@@ -17,7 +17,7 @@ Set SCAN_INTERVAL_SECONDS=0 in .env to disable.
 
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.config import SCAN_INTERVAL_SECONDS
 
@@ -38,10 +38,27 @@ def get_scheduler_status() -> dict:
 def _loop():
     from app.database import SessionLocal
     from app.scan_pipeline import run_full_cycle
-    from app.manual_scan import mark_scheduled_scan_start, mark_scheduled_scan_end, progress_reporter, cancel_checker
+    from app.manual_scan import (
+        get_manual_scan_status, mark_scheduled_scan_start, mark_scheduled_scan_end,
+        progress_reporter, cancel_checker,
+    )
 
     while True:
         time.sleep(_state["interval_seconds"])
+
+        # Manual and scheduled scans share one progress/cancel state
+        # (mark_scheduled_scan_start below resets it, same as a manual
+        # scan's own start). Without this guard, an interval tick landing
+        # while a manual scan (or a previous scheduled cycle that ran long)
+        # is still in progress would reset that shared state out from under
+        # it and start a second run_full_cycle() concurrently — both then
+        # sharing the same cancel flag, so a Stop click on either meant to
+        # stop one run silently cancels both. Skip this tick instead; the
+        # next one picks up once the current run finishes.
+        if get_manual_scan_status()["running"]:
+            _state["last_status"] = "skipped (a scan was already running)"
+            continue
+
         db = SessionLocal()
         # Reports into manual_scan.py's shared _state — same progress
         # banner the dashboard polls for a button-triggered scan, so an
@@ -62,7 +79,7 @@ def _loop():
         finally:
             db.close()
             _state["run_count"] += 1
-            _state["last_run"] = datetime.now().isoformat(timespec="seconds")
+            _state["last_run"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def start_scheduler():

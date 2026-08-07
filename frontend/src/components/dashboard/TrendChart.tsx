@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { ReadinessHistoryPoint } from "../../types";
 import { chartInk, riskColors } from "../../lib/risk";
 import { useTheme } from "../../theme/ThemeProvider";
+import { formatTimestamp } from "../../lib/datetime";
 
 // Direct port of loadTrend()/renderTrend — one point per completed scan.
 export function TrendChart({ history }: { history: ReadinessHistoryPoint[] }) {
@@ -53,7 +54,7 @@ export function TrendChart({ history }: { history: ReadinessHistoryPoint[] }) {
               className="cursor-pointer"
             >
               <title>
-                {p.timestamp} ({p.triggered_by}): {score}/100
+                {formatTimestamp(p.timestamp)} ({p.triggered_by}): {score}/100
               </title>
             </circle>
           );

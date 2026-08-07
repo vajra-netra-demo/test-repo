@@ -13,7 +13,7 @@ per-device credentials — proportionate to a read-only reporting endpoint,
 not a system that can act on anything.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -54,7 +54,7 @@ def submit_endpoint_report(
     db: Session = Depends(get_db),
     _: None = Depends(_check_token),
 ):
-    now = datetime.now().isoformat(timespec="seconds")
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     device = db.query(EndpointDevice).filter(EndpointDevice.id == body.device_id).first()
     if device:
@@ -167,7 +167,7 @@ def offboard_employee(employee: str, body: OffboardRequest, db: Session = Depend
     if not device_ids:
         raise HTTPException(status_code=404, detail=f"No devices found for employee '{employee}'.")
 
-    now = datetime.now().isoformat(timespec="seconds")
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     existing = db.query(OffboardedEmployee).filter(OffboardedEmployee.employee == employee).first()
     if existing:
         existing.offboarded_date = now

@@ -119,4 +119,5 @@ def get_scan_history(limit: int = 50, db: Session = Depends(get_db)):
         "high_count": s.high_count,
         "medium_count": s.medium_count,
         "low_count": s.low_count,
+        "duration_seconds": s.duration_seconds,
     } for s in reversed(snapshots)]

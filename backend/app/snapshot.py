@@ -4,7 +4,8 @@ Called after every scan+assess cycle (manual button click or scheduled run)
 so the dashboard can show a trend over time, not just the latest state.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -31,16 +32,21 @@ def compute_readiness(db: Session):
     return score, counts, len(assessed)
 
 
-def record_snapshot(db: Session, triggered_by: str):
+def record_snapshot(db: Session, triggered_by: str, duration_seconds: Optional[int] = None):
     score, counts, total = compute_readiness(db)
     snapshot = ScanSnapshot(
-        timestamp=datetime.now().isoformat(timespec="seconds"),
+        # UTC-aware (explicit offset) so the frontend's Date parsing renders
+        # it in each viewer's own local timezone instead of a raw server-
+        # clock string — a Railway container's clock is UTC, so a naive
+        # string here read literally can look hours off from IST.
+        timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         triggered_by=triggered_by,
         readiness_score=score,
         total_tools=total,
         high_count=counts["High"],
         medium_count=counts["Medium"],
         low_count=counts["Low"],
+        duration_seconds=duration_seconds,
     )
     db.add(snapshot)
     db.commit()

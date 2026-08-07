@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import { Pagination } from "../Pagination";
 import { usePagination } from "../../hooks/usePagination";
 import type { EndpointDevice } from "../../types";
+import { formatTimestamp } from "../../lib/datetime";
 
 export function EndpointsView() {
   const [devices, setDevices] = useState<EndpointDevice[] | null>(null);
@@ -73,8 +74,8 @@ export function EndpointsView() {
                   <Td>{d.os}</Td>
                   <Td>{d.employee || "—"}</Td>
                   <Td>{d.department || "—"}</Td>
-                  <Td>{d.first_checkin}</Td>
-                  <Td>{d.last_checkin}</Td>
+                  <Td>{formatTimestamp(d.first_checkin)}</Td>
+                  <Td>{formatTimestamp(d.last_checkin)}</Td>
                   <Td>{d.agent_version || "—"}</Td>
                   <Td>{findingCounts[d.id] || 0}</Td>
                 </tr>

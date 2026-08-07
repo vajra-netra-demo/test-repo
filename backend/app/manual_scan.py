@@ -21,7 +21,7 @@ no separate concept there either.
 """
 
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 _state = {
@@ -79,7 +79,7 @@ def request_cancel() -> bool:
 def _reset_for_start() -> None:
     _cancel_event.clear()
     _state["running"] = True
-    _state["started_at"] = datetime.now().isoformat(timespec="seconds")
+    _state["started_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     _state["finished_at"] = None
     _state["phase"] = "starting"
     _state["current"] = 0
@@ -93,7 +93,7 @@ def _reset_for_end() -> None:
     _state["current"] = 0
     _state["total"] = 0
     _state["cancel_requested"] = False
-    _state["finished_at"] = datetime.now().isoformat(timespec="seconds")
+    _state["finished_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def _run():

@@ -8,6 +8,7 @@ import { Pagination } from "../Pagination";
 import { usePagination } from "../../hooks/usePagination";
 import { riskLevel } from "../../lib/risk";
 import type { EmployeeProfile, EmployeeSummary } from "../../types";
+import { formatTimestamp } from "../../lib/datetime";
 
 const TRIAGE_CLASSES: Record<string, string> = {
   "auto-fix": "bg-high-bg text-high-dark ring-1 ring-inset ring-high/30",
@@ -182,7 +183,9 @@ export function EmployeesView() {
               <>
                 <div className="text-[13px] text-text">
                   <strong>Devices:</strong>{" "}
-                  {profile.devices.map((d) => `${d.hostname} (${d.os}, last check-in ${d.last_checkin})`).join(", ") ||
+                  {profile.devices
+                    .map((d) => `${d.hostname} (${d.os}, last check-in ${formatTimestamp(d.last_checkin)})`)
+                    .join(", ") ||
                     "—"}
                 </div>
                 {profile.offboarded && (

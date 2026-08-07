@@ -48,6 +48,7 @@ def run_full_cycle(
     def _cancelled() -> bool:
         return bool(should_cancel and should_cancel())
 
+    cycle_start = time.monotonic()
     live_ingested = 0
     was_cancelled = False
 
@@ -181,7 +182,10 @@ def run_full_cycle(
         push_to_sentinel(high_risk_all)
         push_to_splunk(high_risk_all)
 
-    snapshot = record_snapshot(db, f"{triggered_by} (cancelled)" if was_cancelled else triggered_by)
+    duration_seconds = round(time.monotonic() - cycle_start)
+    snapshot = record_snapshot(
+        db, f"{triggered_by} (cancelled)" if was_cancelled else triggered_by, duration_seconds=duration_seconds,
+    )
 
     if was_cancelled:
         _report(0, 0, "cancelled")
@@ -191,4 +195,5 @@ def run_full_cycle(
         "total_tools": len(all_tools),
         "readiness_score": snapshot.readiness_score,
         "cancelled": was_cancelled,
+        "duration_seconds": duration_seconds,
     }

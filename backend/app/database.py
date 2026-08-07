@@ -43,6 +43,9 @@ _NEW_NULLABLE_COLUMNS = {
         "tls_subject_org": "VARCHAR",
         "previous_risk_score": "INTEGER",
     },
+    "scan_snapshots": {
+        "duration_seconds": "INTEGER",
+    },
 }
 
 

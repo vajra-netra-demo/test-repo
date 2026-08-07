@@ -3,6 +3,7 @@ import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthProvider";
 import type { DiscoveryStatus, ReadinessHistoryPoint, RiskLevel, SaaSTool, ScanProgress, TenantProfile } from "../../types";
 import { riskLevel } from "../../lib/risk";
+import { formatDuration } from "../../lib/duration";
 import { useToast } from "../Toaster";
 import { DashboardTopBar } from "../dashboard/DashboardTopBar";
 import { ScanProgressBanner } from "../dashboard/ScanProgressBanner";
@@ -192,16 +193,20 @@ export function DashboardView() {
       if (localStorage.getItem(LAST_NOTIFIED_SCAN_KEY) === data.finished_at) return;
       localStorage.setItem(LAST_NOTIFIED_SCAN_KEY, data.finished_at);
     }
+    const durationSuffix =
+      data.last_result?.duration_seconds !== undefined
+        ? ` Took ${formatDuration(data.last_result.duration_seconds)}.`
+        : "";
     if (data.last_error) {
       showToast(`Live scan failed: ${data.last_error}`, "error");
     } else if (data.last_result?.cancelled) {
       showToast(
-        `Scan stopped — kept ${data.last_result.live_ingested} real tool(s) assessed so far. Readiness: ${data.last_result.readiness_score}/100.`,
+        `Scan stopped — kept ${data.last_result.live_ingested} real tool(s) assessed so far. Readiness: ${data.last_result.readiness_score}/100.${durationSuffix}`,
         "info",
       );
     } else if (data.last_result) {
       showToast(
-        `Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.`,
+        `Live scan complete — ingested ${data.last_result.live_ingested} real tool(s). Readiness: ${data.last_result.readiness_score}/100.${durationSuffix}`,
         "success",
       );
     }
