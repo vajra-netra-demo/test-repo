@@ -27,7 +27,11 @@ router = APIRouter(prefix="/classify", tags=["classification"], dependencies=[De
 def classify(body: ClassifyTextRequest, db: Session = Depends(get_db)):
     result = classify_text(body.text)
 
-    snippet = body.text[:200] + ("…" if len(body.text) > 200 else "")
+    # Masked, not the raw input -- a tool whose entire purpose is finding
+    # sensitive data shouldn't turn around and store/display that same data
+    # in the clear in its own scan history.
+    masked = result["masked_text"]
+    snippet = masked[:200] + ("…" if len(masked) > 200 else "")
     scan = ClassificationScan(
         tenant=body.tenant,
         label=body.label,

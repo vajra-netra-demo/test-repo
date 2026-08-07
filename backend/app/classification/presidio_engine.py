@@ -70,6 +70,24 @@ RELEVANT_ENTITIES = [
 ]
 
 
+def _mask_span(matched: str) -> str:
+    return matched[:2] + "•" * max(len(matched) - 4, 0) + matched[-2:] if len(matched) > 4 else "•" * len(matched)
+
+
+def mask_text(text: str, results) -> str:
+    """Rebuilds `text` with every detected entity span replaced by its
+    masked form (same scheme as the per-entity examples below) — used for
+    anything derived from the input that gets persisted or displayed
+    (e.g. a history-table snippet), so a tool whose whole purpose is
+    finding sensitive data doesn't turn around and store/echo that same
+    data in the clear. Spans are replaced back-to-front so earlier offsets
+    stay valid as the string shrinks/grows."""
+    masked = text
+    for r in sorted(results, key=lambda r: r.start, reverse=True):
+        masked = masked[: r.start] + _mask_span(text[r.start : r.end]) + masked[r.end :]
+    return masked
+
+
 def classify_text(text: str) -> dict:
     """Runs the real Presidio analyzer over `text` and returns a summary
     shaped for the dashboard/API — entity counts plus per-entity examples
@@ -82,8 +100,7 @@ def classify_text(text: str) -> dict:
     examples: dict = {}
     for r in results:
         entity_counts[r.entity_type] = entity_counts.get(r.entity_type, 0) + 1
-        matched = text[r.start:r.end]
-        masked = matched[:2] + "•" * max(len(matched) - 4, 0) + matched[-2:] if len(matched) > 4 else "•" * len(matched)
+        masked = _mask_span(text[r.start:r.end])
         examples.setdefault(r.entity_type, []).append({"masked_value": masked, "confidence": round(r.score, 2)})
 
     # Simple, transparent scoring: each detected entity type present adds to
@@ -101,4 +118,5 @@ def classify_text(text: str) -> dict:
         "entity_counts": entity_counts,
         "examples": examples,
         "sensitivity_score": sensitivity_score,
+        "masked_text": mask_text(text, results),
     }
