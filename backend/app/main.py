@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="NETRA MVP API", version="0.1.0")
 
-# Allows the dashboard (static/index.html) to be hosted separately (e.g. on
-# Vercel) from this API (Railway) and still call it cross-origin. JWT auth
-# (app/auth.py) is carried in an Authorization header, not a cookie, so a
-# wide-open CORS policy doesn't expose session state the way it would for
-# cookie-based auth.
+# Allows the dashboard (the React app built from ../frontend) to be hosted
+# separately (e.g. on Vercel) from this API (Railway) and still call it
+# cross-origin. JWT auth (app/auth.py) is carried in an Authorization
+# header, not a cookie, so a wide-open CORS policy doesn't expose session
+# state the way it would for cookie-based auth.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -67,6 +67,8 @@ def health():
 
 
 # Mounted last so /health, /tools, /report, /discovery are matched first —
-# this serves the Day 5 dashboard at "/".
-STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+# this serves the React dashboard (../frontend, built with `npm run build`)
+# at "/". Run the frontend build before starting this app locally, or this
+# mount will 404 with a missing-directory error — see frontend/README.md.
+STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")

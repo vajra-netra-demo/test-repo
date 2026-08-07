@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 uvicorn.log
 backend/output/
+backend/.venv/

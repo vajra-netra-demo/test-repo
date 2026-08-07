@@ -1,0 +1,343 @@
+@import "tailwindcss";
+
+/*
+ * "Security Command Center" theme — a deep-navy, glass-and-glow aesthetic
+ * built for a data-privacy/threat-discovery product, not a generic admin
+ * template. Declared under Tailwind v4's @theme so every token below
+ * generates matching utilities automatically (bg-accent, text-high-dark,
+ * border-border, shadow-accent/20, etc.) — component code references these
+ * by role, never raw hex, so the whole app re-themes from this one file.
+ *
+ * These are the DARK values (the default/primary identity). Light mode is
+ * the [data-theme="light"] override block further down — same token names,
+ * different values, toggled by ThemeProvider stamping data-theme on <html>.
+ */
+@theme {
+  /* Canvas — the deep navy the whole app sits on, not just the sidebar */
+  --color-bg: #0a0f1c;
+  --color-bg-2: #060a13;
+
+  /* Glass surfaces — translucent over the canvas, not opaque white */
+  --color-card: rgba(255, 255, 255, 0.035);
+  --color-card-hover: rgba(255, 255, 255, 0.06);
+  --color-border: rgba(255, 255, 255, 0.09);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Solid (non-translucent) surface for anything that floats OVER other
+     content — dropdown listboxes, menus, popovers. --color-card is
+     deliberately translucent-over-the-canvas for panels that sit flat in
+     the page flow; a floating panel using that same translucency lets
+     whatever's behind it (donut charts, colored text) bleed through and
+     become illegible. This is a few steps lighter than the canvas (dark)
+     or a clean near-white (light), fully opaque either way. */
+  --color-popover: #131c30;
+
+  /* Opaque base for the bg-tint/[N] / border-tint/[N] utility pattern — an
+     opacity modifier needs an opaque color to mix against transparent, so
+     this can't itself be an rgba() like --color-card above. White lightens
+     the dark canvas; the light theme override swaps this to a dark slate so
+     the same utility darkens a light canvas instead. Every subtle fill/
+     hairline in the app (table headers, chip backgrounds, hover washes) is
+     built on this one token so it flips with the theme automatically. */
+  --color-tint: #ffffff;
+
+  /* Ink */
+  --color-text: #e7ecf6;
+  --color-muted: #8b96ad;
+  --color-faint: #5b6478;
+
+  /* Brand accent — electric cyan, the product's one signature color */
+  --color-accent: #22d3ee;
+  --color-accent-dark: #0891b2;
+  --color-accent-light: rgba(34, 211, 238, 0.12);
+
+  /* Status — fixed roles (never themed as "series" colors), validated for
+     CVD separation + ≥3:1 contrast against each mode's canvas via
+     dataviz/scripts/validate_palette.js. Always shipped with a text label
+     alongside (badges, KPI labels) — never color-alone. */
+  --color-high: #f43f5e;
+  --color-high-bg: rgba(244, 63, 94, 0.14);
+  --color-high-dark: #fca5b1;
+
+  --color-med: #fbbf24;
+  --color-med-bg: rgba(251, 191, 36, 0.14);
+  --color-med-dark: #fde08a;
+
+  --color-low: #34d399;
+  --color-low-bg: rgba(52, 211, 153, 0.14);
+  --color-low-dark: #86ecc1;
+
+  /* Sidebar — a shade deeper than the canvas, not a different palette.
+     Deliberately fixed across both themes (branded chrome that doesn't
+     flip) — so its own text/accent tokens below are NOT overridden in the
+     [data-theme="light"] block further down, unlike every other color
+     above. Sidebar.tsx must use these dedicated tokens, never the page's
+     theme-flipping text/accent utilities, or its own text goes dark-on-
+     dark illegible in light mode. */
+  --color-sidebar: #0d1526;
+  --color-sidebar-end: #060a13;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-border: rgba(255, 255, 255, 0.1);
+  --color-sidebar-text: #e7ecf6;
+  --color-sidebar-muted: #8b96ad;
+  --color-sidebar-accent: #22d3ee;
+  --color-sidebar-accent-bg: rgba(34, 211, 238, 0.12);
+  --color-sidebar-good: #34d399;
+  --color-sidebar-good-bg: rgba(52, 211, 153, 0.14);
+  --color-sidebar-good-text: #86ecc1;
+
+  /* Plus Jakarta Sans first — the typeface match for the reference admin-
+     dashboard template (Edura); the rest of the stack is the previous
+     fallback chain, kept as-is in case the webfont fails to load. */
+  --font-sans: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Internal (non-Tailwind-namespaced) tokens for the canvas texture, glow
+   shadows, and scrollbar — kept as plain custom properties rather than
+   @theme entries since nothing needs a matching utility class generated
+   for them, just the raw values inside the rules below. Same dark-default
+   + light-override pattern as the @theme colors above. */
+:root {
+  --glow-1: rgba(34, 211, 238, 0.1);
+  --glow-2: rgba(244, 63, 94, 0.06);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+  --glass-blur: 14px;
+}
+
+/*
+ * LIGHT MODE — same identity (cyan accent, mono numerals, glass surfaces),
+ * rebuilt for a bright canvas: near-white instead of navy, translucent-dark
+ * glass instead of translucent-light, status colors re-picked for contrast
+ * against white (validated the same way as the dark set). The sidebar stays
+ * dark in both modes (branded chrome — see --color-sidebar-* above, which
+ * this block deliberately does NOT override), while everything else here
+ * uses the exact same class names as the rest of the app.
+ */
+[data-theme="light"] {
+  /* Canvas + card colors below match the reference admin-dashboard
+     template (Edura): a soft lavender-gray canvas under clean, near-opaque
+     white cards with a visible soft shadow (added on .glass further down)
+     rather than this app's usual translucent-glass-over-canvas look — the
+     backdrop-filter blur on .glass still applies but has nothing left to
+     blur through a near-opaque card, which is intentional here. */
+  --color-bg: #f4f6fb;
+  --color-bg-2: #eceff5;
+
+  --color-card: rgba(255, 255, 255, 0.9);
+  /* Fully opaque (vs. the base card's 0.9) — reads as the card "lifting" to
+     a crisper white on hover, the inverse of the old darker-tint-on-hover
+     logic that made sense when the card itself was a translucent dark
+     tint over the canvas rather than a near-opaque white one. */
+  --color-card-hover: #ffffff;
+  --color-border: rgba(15, 23, 42, 0.07);
+  --color-border-strong: rgba(15, 23, 42, 0.14);
+  --color-popover: #ffffff;
+
+  --color-tint: #0f172a;
+
+  --color-text: #182035;
+  /* Darker than Tailwind's usual gray-500 — that measures ~4.5:1 against
+     this canvas, right at the WCAG AA floor, and reads as washed out at
+     the 12-13px sizes this app uses for most secondary text (subtitles,
+     table headers, status pills). ~7:1 here instead. */
+  --color-muted: #475569;
+  --color-faint: #6b7688;
+
+  --color-accent: #0891b2;
+  --color-accent-dark: #0e7490;
+  --color-accent-light: rgba(8, 145, 178, 0.1);
+
+  --color-high: #d64545;
+  --color-high-bg: #fdecea;
+  --color-high-dark: #a02828;
+
+  --color-med: #d68c1f;
+  --color-med-bg: #fff4e0;
+  --color-med-dark: #9a6212;
+
+  --color-low: #2e9e5b;
+  --color-low-bg: #e7f7ee;
+  --color-low-dark: #1e6e3e;
+
+  --color-sidebar: #101a33;
+  --color-sidebar-end: #0a1226;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+
+  --glow-1: rgba(8, 145, 178, 0.07);
+  --glow-2: rgba(244, 63, 94, 0.045);
+  --scrollbar-thumb: rgba(15, 23, 42, 0.15);
+  --scrollbar-thumb-hover: rgba(15, 23, 42, 0.25);
+}
+
+html {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Page canvas texture — two soft glow blobs, fixed to the viewport behind
+   everything. (The grid-line layer that used to sit alongside this was
+   removed — it read as visual noise across every page rather than the
+   intended subtle "technical surface" cue.) */
+.app-canvas {
+  position: relative;
+  isolation: isolate;
+}
+.app-canvas::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(600px circle at 15% -5%, var(--glow-1), transparent 60%),
+    radial-gradient(500px circle at 90% 10%, var(--glow-2), transparent 60%);
+}
+
+/* Glass card — the base surface for every panel/table/tile */
+.glass {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+/* Soft elevation shadow, light mode only — matches the reference template's
+   flat white cards floating on a soft-gray canvas via shadow rather than
+   the dark theme's glow-and-border-only depth cue (a shadow this visible
+   would just look muddy over the dark canvas, so it's not shared). */
+[data-theme="light"] .glass {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -8px rgba(16, 24, 40, 0.1);
+}
+.glass-hover {
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.glass-hover:hover {
+  background: var(--color-card-hover);
+  border-color: var(--color-border-strong);
+}
+[data-theme="light"] .glass-hover:hover {
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.05), 0 12px 32px -8px rgba(16, 24, 40, 0.14);
+}
+
+/* Toast slide-in (Toaster.tsx) */
+@keyframes toast-in {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.animate-toast-in {
+  animation: toast-in 0.25s ease-out;
+}
+
+/* View-switch fade (App.tsx) */
+@keyframes view-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-view-fade {
+  animation: view-fade-in 0.2s ease-out;
+}
+
+/* Slow pulse on "live" status dots + the readiness ring's glow */
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.animate-live-pulse {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Modal panel entrance (Modal.tsx) — a slight scale+lift, distinct from
+   the flatter view-fade used for page-level transitions, so an overlay
+   dialog reads as "arriving toward you" rather than just fading in. */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-modal-in {
+  animation: modal-in 0.18s ease-out;
+}
+
+/* Indeterminate progress sweep (ScanProgressBanner) — a highlight band
+   drifting left-to-right on loop, since there's no real percentage to
+   show for a live scan's progress. */
+@keyframes scan-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+.animate-scan-sweep {
+  animation: scan-sweep 1.6s ease-in-out infinite;
+}
+
+/* Colored glow shadows keyed to the accent/status hues — used on
+   interactive surfaces (primary buttons, active nav, the readiness ring),
+   not on static decoration. Kept as fixed rgba (not theme tokens) since a
+   glow reads fine in both modes at the same intensity — only the surface
+   underneath it changes. */
+.shadow-accent-glow {
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4), 0 8px 24px -6px rgba(34, 211, 238, 0.45);
+}
+.glow-high {
+  filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.45));
+}
+.glow-med {
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
+}
+.glow-low {
+  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.45));
+}
+.glow-accent {
+  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.5));
+}
+
+/* Scrollbar — matches the canvas rather than the OS default */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
