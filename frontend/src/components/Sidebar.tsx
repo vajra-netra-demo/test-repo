@@ -12,6 +12,7 @@ import {
 import { useState, type ComponentType } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import type { ViewKey } from "../types/view";
+import trinetraLogo from "../assets/trinetra-logo.png";
 
 const NAV_ITEMS: Array<{ key: ViewKey; label: string; icon: ComponentType<{ size?: number; strokeWidth?: number }>; adminOnly?: boolean }> = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -72,12 +73,20 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
       </button>
 
       <div className={`flex items-center gap-3 border-b border-sidebar-border px-6 pb-6 ${collapsed ? "justify-center px-0" : ""}`}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sidebar-accent to-accent-dark text-[15px] font-extrabold text-[#03151a] shadow-accent-glow">
-          N
+        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg shadow-accent-glow">
+          {/* Source is a full square poster (eye emblem + wordmark + tagline
+              baked in, see frontend/src/assets/trinetra-logo.png) — oversized
+              and cropped to just the eye emblem here since the full poster's
+              text is illegible at nav-icon size. */}
+          <img
+            src={trinetraLogo}
+            alt="TriNetra"
+            className="absolute left-1/2 top-[-26%] h-[200%] w-[200%] max-w-none -translate-x-1/2 object-cover"
+          />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <div className="text-[17px] font-extrabold tracking-wide text-sidebar-text">NETRA</div>
+            <div className="text-[17px] font-extrabold tracking-wide text-sidebar-text">TriNetra</div>
             <div className="text-[10.5px] leading-snug text-sidebar-muted">Privacy & Shadow-IT Discovery</div>
           </div>
         )}
