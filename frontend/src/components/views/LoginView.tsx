@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import { ApiError } from "../../api/client";
 import { PasswordInput } from "../PasswordInput";
@@ -87,11 +86,6 @@ export function LoginView() {
             {busy ? "Signing in…" : "Sign in"}
           </button>
         </form>
-
-        <div className="mt-5 flex items-center gap-2 rounded-lg border border-low/20 bg-low-bg px-3 py-2 text-[10.5px] font-semibold text-low-dark">
-          <ShieldCheck size={13} strokeWidth={2.25} />
-          Read-only discovery — no destructive action without confirmation
-        </div>
       </div>
     </div>
   );
