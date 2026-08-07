@@ -4,6 +4,10 @@ import { chartInk, riskColors } from "../../lib/risk";
 import { useTheme } from "../../theme/ThemeProvider";
 
 const TOP_LABEL_COUNT = 5;
+// Minimum vertical gap enforced between adjacent direct labels, in px —
+// without this, two tools landing at the same or close "after" score get
+// their name labels drawn on top of each other, illegible.
+const MIN_LABEL_GAP = 13;
 
 // Renders GET /discovery/risk-changes as a slope chart — the standard form
 // for "compare two values per entity across two points" (Tufte's
@@ -37,7 +41,21 @@ export function RiskChangesPanel({ data, loading }: { data: RiskChanges | null; 
       labeled: i < TOP_LABEL_COUNT,
     }));
 
-    return { w, h, leftX, rightX, topY, bottomY, yFor, rows };
+    // Sweep top-to-bottom pushing any label that would land within
+    // MIN_LABEL_GAP of the previous one further down -- otherwise two
+    // tools ending at the same (or a close) "after" score draw their name
+    // labels on top of each other. labelY can end up offset from the
+    // real data point (y2), so the render pass draws a short leader line
+    // connecting them whenever that happens.
+    const labelY = new Map();
+    let prevY = -Infinity;
+    for (const r of [...rows].filter((r) => r.labeled).sort((a, b) => a.y2 - b.y2)) {
+      const y = Math.max(r.y2, prevY + MIN_LABEL_GAP);
+      labelY.set(r.tool_id, y);
+      prevY = y;
+    }
+
+    return { w, h, leftX, rightX, topY, bottomY, yFor, rows, labelY };
   }, [data]);
 
   if (loading || !data) {
@@ -118,11 +136,28 @@ export function RiskChangesPanel({ data, loading }: { data: RiskChanges | null; 
                   </line>
                   <circle cx={layout.leftX} cy={r.y1} r={3.5} fill={color} stroke={ink.ring} strokeWidth={1.5} />
                   <circle cx={layout.rightX} cy={r.y2} r={3.5} fill={color} stroke={ink.ring} strokeWidth={1.5} />
-                  {r.labeled && (
-                    <text x={layout.rightX + 12} y={r.y2} dominantBaseline="middle" fontSize={10} fontWeight={600} fill={ink.ink}>
-                      {r.tool_name}
-                    </text>
-                  )}
+                  {r.labeled &&
+                    (() => {
+                      const ly = layout.labelY.get(r.tool_id) ?? r.y2;
+                      const offset = Math.abs(ly - r.y2) > 1;
+                      return (
+                        <>
+                          {offset && (
+                            <line x1={layout.rightX} y1={r.y2} x2={layout.rightX + 8} y2={ly} stroke={ink.muted} strokeWidth={1} opacity={0.5} />
+                          )}
+                          <text
+                            x={layout.rightX + (offset ? 10 : 12)}
+                            y={ly}
+                            dominantBaseline="middle"
+                            fontSize={10}
+                            fontWeight={600}
+                            fill={ink.ink}
+                          >
+                            {r.tool_name}
+                          </text>
+                        </>
+                      );
+                    })()}
                 </g>
               );
             })}
