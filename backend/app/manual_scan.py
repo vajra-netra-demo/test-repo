@@ -88,10 +88,16 @@ def _reset_for_start() -> None:
 
 
 def _reset_for_end() -> None:
+    # Deliberately does NOT zero current/total: the dashboard polls this
+    # state on a fixed interval, so the exact instant the scan thread
+    # finishes almost never lines up with a poll. Zeroing here means the
+    # very next poll after a real "99/100" reading jumps straight to
+    # running=false + 0/0, so the UI never observes true completion — it
+    # looks like the scan gets cut off just short of 100% every time. The
+    # last real current/total (whatever the scan actually finished at)
+    # stays until the next run's _reset_for_start() overwrites it.
     _state["running"] = False
     _state["phase"] = "idle"
-    _state["current"] = 0
-    _state["total"] = 0
     _state["cancel_requested"] = False
     _state["finished_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
 

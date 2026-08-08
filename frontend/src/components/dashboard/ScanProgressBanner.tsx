@@ -10,6 +10,7 @@ const PHASE_LABEL: Record<string, string> = {
   // small number of *new* tools just found a moment ago.
   assessing: "Re-assessing existing tools",
   cancelled: "Stopping scan",
+  complete: "Scan complete",
 };
 
 const r = 26,

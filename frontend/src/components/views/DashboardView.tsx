@@ -247,6 +247,25 @@ export function DashboardView() {
         pollTimer.current = setTimeout(check, 1200);
         return;
       }
+      // The backend thread finishing almost never lines up with this 1.2s
+      // poll — the real current/total (backend/app/manual_scan.py no
+      // longer zeroes them on completion, on purpose) usually still shows
+      // whatever count it stopped polling short of, e.g. 92/100, with the
+      // very next poll already reporting running=false. Without this, the
+      // ring would jump straight from 92% to gone, so the scan visually
+      // never reaches 100%. Pin it at the real 100% for a beat first, then
+      // clear it, on any real successful completion (not a failure/cancel,
+      // which already have their own phase/label).
+      if (!data.last_error && !data.last_result?.cancelled && (data.total ?? 0) > 0) {
+        setScanProgress({ ...data, phase: "complete", current: data.total, total: data.total });
+        setTimeout(() => {
+          setScanning(false);
+          setScanProgress(null);
+          notifyScanResult(data);
+          reload();
+        }, 700);
+        return;
+      }
       setScanning(false);
       setScanProgress(null);
       notifyScanResult(data);

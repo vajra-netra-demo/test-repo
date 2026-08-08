@@ -126,7 +126,7 @@ export interface DiscoveryStatus {
 }
 
 // GET /discovery/scan-progress
-export type ScanPhase = "idle" | "starting" | "discovering" | "assessing" | "cancelled";
+export type ScanPhase = "idle" | "starting" | "discovering" | "assessing" | "cancelled" | "complete";
 export interface ScanProgress {
   running: boolean;
   // Real per-tool progress (backend/app/scan_pipeline.py's on_progress

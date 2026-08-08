@@ -97,6 +97,21 @@ def submit_endpoint_report(
         ))
 
     db.commit()
+
+    # Newly-ingested findings land with no risk_score: unlike live-discovered
+    # (GitHub) tools, which get assessed inline as part of run_full_cycle's
+    # own discovery loop, endpoint findings arrive through this separate
+    # HTTP endpoint entirely outside that cycle. Scoring hundreds of
+    # findings with a real LLM call each, synchronously, inside this
+    # request would hang the agent for a very long time (and risk the same
+    # gateway-timeout failure manual_scan.py's docstring already describes
+    # for full scans) — so instead this just kicks the same background scan
+    # the dashboard's "Run Live Scan" button uses. A scan already in flight
+    # is left alone (start_manual_scan() no-ops) since it will pick up
+    # these rows anyway via its own fresh query.
+    from app.manual_scan import start_manual_scan
+    start_manual_scan()
+
     return {"device_id": body.device_id, "findings_ingested": len(body.findings)}
 
 
