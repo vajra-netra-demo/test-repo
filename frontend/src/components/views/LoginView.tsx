@@ -55,7 +55,7 @@ export function LoginView() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="glass w-full rounded-lg px-3.5 py-2.5 text-[13px] text-text placeholder:text-faint transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-              placeholder="admin"
+              placeholder="Enter your username"
             />
           </div>
           <div>
