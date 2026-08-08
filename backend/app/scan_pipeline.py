@@ -110,17 +110,27 @@ def run_full_cycle(
         if high_risk_live_findings:
             notify_high_risk_findings(high_risk_live_findings)
 
-    # Re-assess every tool (sample + live + endpoint) so nothing is ever left stale.
-    # Skipped entirely if cancelled during discovery above — Stop means stop,
-    # not "finish discovering, then assess anyway."
+    # Re-assess every live/sample tool every cycle so nothing is ever left
+    # stale (their usage/dormancy/scopes can genuinely drift over time).
+    # Endpoint findings are different: they describe a point-in-time
+    # installed-software/browser-extension snapshot that doesn't drift on
+    # its own between check-ins, so once one has a real score there's
+    # nothing new to learn by re-running a real LLM call on it every single
+    # cycle forever. At real endpoint scale (hundreds of packages per
+    # device) re-assessing all of them unconditionally on every 30-minute
+    # auto-scan turned each cycle into a 1000+-call, 20+ minute run. A
+    # fresh device check-in still gets reassessed, since
+    # routers/endpoint.py deletes and reinserts that device's rows from
+    # scratch (risk_score comes back None) every time it reports in.
     all_tools = db.query(SaaSTool).all()
-    total_assess = len(all_tools)
+    tools_to_assess = [t for t in all_tools if t.source != "endpoint" or t.risk_score is None]
+    total_assess = len(tools_to_assess)
 
     if was_cancelled:
         pass
     else:
         from app.tasks import is_configured as celery_configured
-        if celery_configured() and all_tools:
+        if celery_configured() and tools_to_assess:
             # Real parallel dispatch to a separate Celery worker process (see
             # app/tasks.py) instead of one-at-a-time in this process. Each task
             # commits its own row via its own DB session, so this session's
@@ -141,7 +151,7 @@ def run_full_cycle(
             from app.tasks import assess_and_store_tool
 
             _report(0, total_assess, "assessing")
-            job = group(assess_and_store_tool.s(t.id) for t in all_tools).apply_async()
+            job = group(assess_and_store_tool.s(t.id) for t in tools_to_assess).apply_async()
             deadline = time.monotonic() + 300
             while not job.ready() and time.monotonic() < deadline:
                 if _cancelled():
@@ -160,7 +170,7 @@ def run_full_cycle(
             if not was_cancelled:
                 _report(total_assess, total_assess, "assessing")
         else:
-            for i, t in enumerate(all_tools, start=1):
+            for i, t in enumerate(tools_to_assess, start=1):
                 if _cancelled():
                     was_cancelled = True
                     break
