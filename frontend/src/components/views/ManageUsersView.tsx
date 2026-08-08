@@ -122,7 +122,7 @@ export function ManageUsersView() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="glass w-[180px] rounded-lg px-3 py-2 text-[13px] text-text placeholder:text-faint transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-              placeholder="••••••••"
+              placeholder="Enter password"
             />
           </div>
           <div>
