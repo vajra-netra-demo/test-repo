@@ -208,6 +208,31 @@ def _parse_tab_separated(line):
     return (parts[0], parts[1]) if len(parts) == 2 else None
 
 
+# dpkg's own Priority field distinguishes core OS/package-manager
+# infrastructure (apt, dpkg, base-files, coreutils, ...) from genuinely
+# optional/extra software a user or admin actually chose to install. A real
+# system carries hundreds of the former and comparatively few of the
+# latter -- without this filter, every endpoint report was dominated by
+# low-level system libraries that carry no real "shadow IT" signal and,
+# having no vendor and near-identical metadata, produced near-duplicate
+# risk reasoning across most findings. Flagged directly by the hackathon
+# mentor testing against his own real Linux server: apt itself (priority
+# "important") showed up as a discovered "tool", and most other findings
+# read as the same generic finding repeated. Using dpkg's own
+# classification is more principled than an arbitrary name blocklist.
+_DPKG_SKIP_PRIORITIES = {"required", "important", "standard"}
+
+
+def _parse_dpkg_line(line):
+    parts = line.split("\t")
+    if len(parts) != 3:
+        return None
+    name, version, priority = parts
+    if priority.strip().lower() in _DPKG_SKIP_PRIORITIES:
+        return None
+    return (name, version)
+
+
 def _parse_pacman_line(line):
     # `pacman -Q` prints "name version" (space-separated) — package names
     # never contain spaces, so a single split is unambiguous.
@@ -241,7 +266,7 @@ def scan_installed_software_linux():
     # Alpine (apk) — a FileNotFoundError from any of these just means "not
     # this distro," not a real failure, so the chain continues silently.
     chain = [
-        (["dpkg-query", "-W", "-f=${Package}\\t${Version}\\n"], _parse_tab_separated),
+        (["dpkg-query", "-W", "-f=${Package}\\t${Version}\\t${Priority}\\n"], _parse_dpkg_line),
         (["rpm", "-qa", "--qf", "%{NAME}\\t%{VERSION}\\n"], _parse_tab_separated),
         (["pacman", "-Q"], _parse_pacman_line),
         (["apk", "info", "-v"], _parse_apk_line),

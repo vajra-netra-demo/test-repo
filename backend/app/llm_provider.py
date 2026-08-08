@@ -12,7 +12,18 @@ Ollama model, if one becomes available) is a change in exactly one place,
 not a hunt through risk_engine.py/triage_agent.py.
 """
 
+import time
+
 from app.config import ANTHROPIC_FOUNDRY_API_KEY, ANTHROPIC_FOUNDRY_RESOURCE
+
+# Azure Foundry's rate limit is per-minute and shared across the whole
+# deployment -- easy to hit during a full scan cycle (one real call per
+# tool, in quick succession, for every tool in the inventory). A short
+# backoff-and-retry clears a per-minute limit far more often than not;
+# 5s/15s/35s totals under a minute of extra wait in the worst case, which
+# is nothing next to a scan that can already run for minutes across many
+# tools.
+RATE_LIMIT_BACKOFF_SECONDS = [5, 15, 35]
 
 MODEL_NAME = "claude-haiku-4-5"
 
@@ -39,9 +50,17 @@ def call_llm(prompt: str, max_tokens: int) -> str:
     client = anthropic.AnthropicFoundry(
         api_key=ANTHROPIC_FOUNDRY_API_KEY, resource=ANTHROPIC_FOUNDRY_RESOURCE, timeout=30.0,
     )
-    response = client.messages.create(
-        model=MODEL_NAME,
-        max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return response.content[0].text
+
+    attempts = len(RATE_LIMIT_BACKOFF_SECONDS) + 1
+    for attempt in range(attempts):
+        try:
+            response = client.messages.create(
+                model=MODEL_NAME,
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text
+        except anthropic.RateLimitError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(RATE_LIMIT_BACKOFF_SECONDS[attempt])
