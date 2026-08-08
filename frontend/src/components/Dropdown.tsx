@@ -37,7 +37,7 @@ interface DropdownProps {
 // wherever Dropdown gets used next to another glass surface.
 export function Dropdown({ value, onChange, options, className, minWidth = 160 }: DropdownProps) {
   const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const current = options.find((o) => o.value === value);
@@ -46,7 +46,25 @@ export function Dropdown({ value, onChange, options, className, minWidth = 160 }
     if (!open || !triggerRef.current) return;
     const update = () => {
       const r = triggerRef.current!.getBoundingClientRect();
-      setRect({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, minWidth) });
+      const margin = 6;
+      // Estimate the list's natural height (each option is a ~36px button
+      // + the list's own ~10px vertical padding) so we can decide whether
+      // it fits below the trigger before ever painting it there — a table's
+      // "Rows per page" control routinely sits right at the bottom of the
+      // viewport (it's the footer of the last thing on the page), so always
+      // opening downward regularly clips the list against the screen edge
+      // rather than any ancestor's overflow.
+      const estimatedHeight = Math.min(288, options.length * 36 + 10);
+      const spaceBelow = window.innerHeight - r.bottom - margin;
+      const spaceAbove = r.top - margin;
+      const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+      const maxHeight = Math.min(288, Math.max(80, openUp ? spaceAbove : spaceBelow));
+      setRect({
+        top: openUp ? Math.max(margin, r.top - Math.min(estimatedHeight, maxHeight) - margin) : r.bottom + margin,
+        left: r.left,
+        width: Math.max(r.width, minWidth),
+        maxHeight,
+      });
     };
     update();
     window.addEventListener("scroll", update, true);
@@ -55,7 +73,7 @@ export function Dropdown({ value, onChange, options, className, minWidth = 160 }
       window.removeEventListener("scroll", update, true);
       window.removeEventListener("resize", update);
     };
-  }, [open, minWidth]);
+  }, [open, minWidth, options.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -100,8 +118,8 @@ export function Dropdown({ value, onChange, options, className, minWidth = 160 }
           <ul
             ref={listRef}
             role="listbox"
-            style={{ top: rect.top, left: rect.left, width: rect.width }}
-            className="animate-view-fade fixed z-50 max-h-72 overflow-auto rounded-lg border border-border bg-popover py-1 shadow-xl"
+            style={{ top: rect.top, left: rect.left, width: rect.width, maxHeight: rect.maxHeight }}
+            className="animate-view-fade fixed z-50 overflow-auto rounded-lg border border-border bg-popover py-1 shadow-xl"
           >
             {options.map((opt) => {
               const selected = opt.value === value;
