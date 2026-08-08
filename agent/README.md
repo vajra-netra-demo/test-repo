@@ -1,4 +1,4 @@
-# NETRA Endpoint Discovery Agent
+# TriNetra Endpoint Discovery Agent
 
 Read-only. Reports what OAuth-based discovery structurally cannot see:
 locally-installed browser extensions (Chrome/Edge) and installed software,
@@ -15,7 +15,7 @@ from whichever machine it runs on.
   a Linux package manager — tries `dpkg` (Debian/Ubuntu), `rpm` (RHEL/
   Fedora/CentOS/SUSE), `pacman` (Arch), then `apk` (Alpine) in order,
   using whichever one is actually present on that machine.
-- POSTs the result to `POST /discovery/endpoint-report` on your NETRA
+- POSTs the result to `POST /discovery/endpoint-report` on your TriNetra
   backend, authenticated with a shared bearer token.
 
 ## What it deliberately does NOT do
@@ -32,7 +32,7 @@ from whichever machine it runs on.
 
 ## Setup
 
-1. On the NETRA backend, set `ENDPOINT_AGENT_TOKEN` in `.env` (any random
+1. On the TriNetra backend, set `ENDPOINT_AGENT_TOKEN` in `.env` (any random
    string — treat it like a password) and restart the server.
 2. Run once manually to confirm it works:
    ```
@@ -54,7 +54,7 @@ from whichever machine it runs on.
 ### Windows (Task Scheduler)
 
 ```
-schtasks /create /tn "NETRA Endpoint Agent" /tr "python C:\path\to\netra_agent.py --backend-url http://127.0.0.1:8200 --token YOUR_TOKEN" /sc daily /st 23:00
+schtasks /create /tn "TriNetra Endpoint Agent" /tr "python C:\path\to\netra_agent.py --backend-url http://127.0.0.1:8200 --token YOUR_TOKEN" /sc daily /st 23:00
 ```
 
 ### Linux (cron)

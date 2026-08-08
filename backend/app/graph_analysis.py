@@ -125,7 +125,7 @@ def compute_attack_paths(tools: list, top_n: int = 15) -> dict:
     executes no adversary behavior, sends no traffic — same line
     app/attack_mapping.py's docstring already draws (the team explicitly
     walked back an earlier "attack-simulation" framing for having no
-    connection to NETRA's actual discovery/governance thesis). This is a
+    connection to TriNetra's actual discovery/governance thesis). This is a
     structural-reachability explanation: "if this already-discovered
     High-risk tool were compromised, here's what it's actually connected
     to via a real shared department or data category" — every edge in

@@ -1,7 +1,7 @@
 """Live discovery via Microsoft Graph API — real (not sample) data, sourced
 from a free Microsoft 365 Developer Program sandbox tenant.
 
-Proves Questions 1 & 2 of the NETRA pitch live:
+Proves Questions 1 & 2 of the TriNetra pitch live:
   1. WHAT IS RUNNING?   -> GET /servicePrincipals   (real registered apps)
   2. WHAT CAN IT TOUCH? -> GET /oauth2PermissionGrants (real granted scopes)
 

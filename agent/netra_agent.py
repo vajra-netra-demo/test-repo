@@ -1,4 +1,4 @@
-"""NETRA endpoint discovery agent — read-only.
+"""TriNetra endpoint discovery agent — read-only.
 
 Enumerates what the org's OAuth-based discovery structurally cannot see:
 locally-installed browser extensions and installed software. Reports them
@@ -302,7 +302,7 @@ def _detect_employee():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="NETRA read-only endpoint discovery agent")
+    parser = argparse.ArgumentParser(description="TriNetra read-only endpoint discovery agent")
     parser.add_argument("--backend-url", required=True, help="e.g. https://your-netra-host or http://127.0.0.1:8200")
     parser.add_argument("--token", required=True, help="Must match the backend's ENDPOINT_AGENT_TOKEN")
     parser.add_argument(

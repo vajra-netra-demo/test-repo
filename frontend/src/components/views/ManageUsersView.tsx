@@ -87,7 +87,7 @@ export function ManageUsersView() {
       <div className="mb-6">
         <h1 className="mb-0.5 text-[21px] font-semibold text-text">Manage Users</h1>
         <p className="m-0 text-[13px] text-muted">
-          Accounts that can sign in to NETRA. No public sign-up — every account here is
+          Accounts that can sign in to TriNetra. No public sign-up — every account here is
           provisioned by an admin, since an account can trigger live scans and revoke real
           access.
         </p>

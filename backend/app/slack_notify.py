@@ -37,12 +37,12 @@ def notify_high_risk_findings(tools: list) -> bool:
     if not tools:
         return False
 
-    lines = [f"🚨 *NETRA Live Scan Alert* — {len(tools)} High-risk tool(s) found:"]
+    lines = [f"🚨 *TriNetra Live Scan Alert* — {len(tools)} High-risk tool(s) found:"]
     for t in tools[:10]:
         flags = ", ".join(t.get("risk_flags") or [])
         lines.append(f"• *{t['tool_name']}* — score {t['risk_score']}/100 ({flags})")
     if len(tools) > 10:
         lines.append(f"...and {len(tools) - 10} more.")
-    lines.append("Review in the NETRA dashboard and mark as remediated or investigate further.")
+    lines.append("Review in the TriNetra dashboard and mark as remediated or investigate further.")
 
     return send_message("\n".join(lines))

@@ -2,8 +2,8 @@
 risk_engine.py and triage_agent.py instead of each independently
 instantiating an AnthropicFoundry client.
 
-Why this exists (see NETRA_HLD.docx / handover doc "sovereignty" note):
-NETRA's pitch originally implied "hosted on ESDS GPU capacity so no data
+Why this exists (see TriNetra_HLD.docx / handover doc "sovereignty" note):
+TriNetra's pitch originally implied "hosted on ESDS GPU capacity so no data
 leaves India." As actually built, REAL mode calls Microsoft Azure Foundry
 in East US 2 — that claim is false for the current provider and should not
 be repeated until a real India/on-prem path exists. Routing every call

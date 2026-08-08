@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Representative/sample dataset standing in for a real Google Workspace Admin SDK / Microsoft Graph API discovery scan. Used because the team has no live tenant access during the hackathon. Field shapes are modeled after real OAuth grant + app-usage report structures from those two APIs.",
-    "source": "Synthetic data authored for the NETRA hackathon MVP — not from any real ESDS or customer tenant.",
+    "source": "Synthetic data authored for the TriNetra hackathon MVP — not from any real ESDS or customer tenant.",
     "record_count": 18
   },
   "tools": [

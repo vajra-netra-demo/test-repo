@@ -14,7 +14,7 @@ from app.tasks import ensure_worker_running
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="NETRA MVP API", version="0.1.0")
+app = FastAPI(title="TriNetra MVP API", version="0.1.0")
 
 # Allows the dashboard (the React app built from ../frontend) to be hosted
 # separately (e.g. on Vercel) from this API (Railway) and still call it

@@ -1,4 +1,4 @@
-# NETRA MVP — Backend
+# TriNetra MVP — Backend
 
 FastAPI + SQLAlchemy service that ingests the sample SaaS/access dataset
 (`../data/sample_saas_tools.json`) and serves it over a REST API. Runs on

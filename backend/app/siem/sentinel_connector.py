@@ -1,6 +1,6 @@
 """Microsoft Sentinel push connector — posts real findings into a real Log
 Analytics workspace via the Azure Monitor Logs Ingestion API, so a finding
-in NETRA's dashboard is genuinely queryable in a real Sentinel workspace
+in TriNetra's dashboard is genuinely queryable in a real Sentinel workspace
 via KQL — not a mock, not a canned response.
 
 Provisioned via netra-mvp/scratch_sentinel_setup.sh (Azure CLI), in the

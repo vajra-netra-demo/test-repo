@@ -1,5 +1,5 @@
 #!/bin/bash
-# NETRA — Microsoft Sentinel setup via Azure CLI
+# TriNetra — Microsoft Sentinel setup via Azure CLI
 # Paste this into your own Cloud Shell (bash) session at portal.azure.com.
 # Uses your existing subscription (the one with Foundry already deployed).
 # Safe to re-run — each step checks/creates idempotently where possible.
@@ -36,7 +36,7 @@ az sentinel onboarding-state create \
   --customer-managed-key false \
   --output table || echo "(Sentinel onboarding may need to be done once via the portal UI if this CLI command isn't available in your az version — see: Microsoft Sentinel > + Create > select this workspace)"
 
-echo "== 4. Custom table for NETRA findings =="
+echo "== 4. Custom table for TriNetra findings =="
 az monitor log-analytics workspace table create \
   --resource-group "$RG" \
   --workspace-name "$WORKSPACE" \

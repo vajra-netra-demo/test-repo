@@ -13,7 +13,7 @@ NOT real NetFlow/packet capture — no traffic content is inspected, only the
 handshake's own certificate — so this stays an honest complement to DNS/
 GeoIP, not a claim of full network visibility.
 
-Deliberately scoped to LIVE-discovered tools, not sample data: NETRA's
+Deliberately scoped to LIVE-discovered tools, not sample data: TriNetra's
 sample dataset is fictional (invented company/product names for demo
 purposes — e.g. "NoteWise AI"), so resolving DNS for a sample vendor would
 either fail outright or, worse, coincidentally resolve to some unrelated

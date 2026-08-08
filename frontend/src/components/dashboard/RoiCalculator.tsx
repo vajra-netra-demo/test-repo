@@ -33,8 +33,8 @@ export function RoiCalculator({ highRiskCount }: { highRiskCount: number }) {
     // framing there instead of just formatting the same number smaller.
     const comparison =
       ratio >= 1
-        ? `roughly ${formatRatio(ratio)}x this org's illustrative annual NETRA subscription`
-        : `about ${Math.round(ratio * 100)}% of this org's illustrative annual NETRA subscription — smaller than the subscription itself at this employee count`;
+        ? `roughly ${formatRatio(ratio)}x this org's illustrative annual TriNetra subscription`
+        : `about ${Math.round(ratio * 100)}% of this org's illustrative annual TriNetra subscription — smaller than the subscription itself at this employee count`;
 
     return { subscriptionLabel, exposureCr, comparison };
   }, [employeesInput, highRiskCount]);
@@ -70,7 +70,7 @@ export function RoiCalculator({ highRiskCount }: { highRiskCount: number }) {
               : "No high-risk tools currently discovered in this view."
           }
         />
-        <RoiCard label="Illustrative NETRA Cost/Year" value={calc.subscriptionLabel} colorClass="text-accent" />
+        <RoiCard label="Illustrative TriNetra Cost/Year" value={calc.subscriptionLabel} colorClass="text-accent" />
       </div>
 
       <div className="mb-2.5 rounded-xl border border-low/30 bg-low-bg p-3.5 px-4.5 text-[14px] font-semibold text-low-dark">
@@ -81,7 +81,7 @@ export function RoiCalculator({ highRiskCount }: { highRiskCount: number }) {
       <div className="text-[10.5px] leading-relaxed text-muted">
         Sources: DPDP Act 2023, Section 8(5) (statutory maximum for security-safeguard failures) · IBM
         Cost of a Data Breach Report 2026, India findings (average breach cost, and the additional
-        cost specifically when shadow AI/IT contributed to the breach). NETRA subscription cost is an
+        cost specifically when shadow AI/IT contributed to the breach). TriNetra subscription cost is an
         illustrative placeholder pending real pricing input — not a final quote.
       </div>
     </div>

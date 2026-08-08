@@ -31,7 +31,7 @@ already has one) — no new signup, no eligibility check.
 ### Step 3 — Create a Personal Access Token
 
 1. Go to https://github.com/settings/tokens → **Tokens (classic)** → **Generate new token (classic)**
-2. Name it `NETRA Live Scan`, set an expiration
+2. Name it `TriNetra Live Scan`, set an expiration
 3. Check the **`admin:org`** scope (needed to list app installations)
 4. Click **Generate token** and copy it immediately (shown once)
 

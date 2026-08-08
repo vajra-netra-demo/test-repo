@@ -12,7 +12,7 @@ until it has actually been run against a real ManageEngine instance —
 is_configured() staying False is the honest state today.
 
 Zeeshan's own caveat from the call applies here too: even once working,
-this surfaces ManageEngine's own inventory, not a NETRA-native capability —
+this surfaces ManageEngine's own inventory, not a TriNetra-native capability —
 useful for real endpoint data fast, not a replacement for the read-only
 agent in netra-mvp/agent/.
 """

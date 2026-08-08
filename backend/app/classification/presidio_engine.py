@@ -49,7 +49,7 @@ def get_analyzer():
     return analyzer
 
 
-# Entities worth surfacing in NETRA's context — the built-in generic ones
+# Entities worth surfacing in TriNetra's context — the built-in generic ones
 # (email, phone, credit card) plus our four Indian-specific ones. Presidio
 # ships several other built-ins (US SSN, IBAN, etc.) that are noise here.
 #

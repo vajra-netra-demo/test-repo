@@ -32,7 +32,7 @@ interface SidebarProps {
 // both themes (see the --color-sidebar-* tokens in index.css), so every
 // piece of text/accent in here uses those *-sidebar-* tokens, never the
 // page's theme-flipping text-*/muted/accent utilities. Using the latter by
-// mistake is exactly how NETRA's wordmark went dark-text-on-dark-sidebar
+// mistake is exactly how TriNetra's wordmark went dark-text-on-dark-sidebar
 // illegible the first time this shipped with light mode.
 export function Sidebar({ active, onSelect }: SidebarProps) {
   const { session, isAdmin, logout } = useAuth();

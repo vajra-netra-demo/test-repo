@@ -6,7 +6,7 @@ organization instantly and install free GitHub Apps to generate real data,
 unlike the Microsoft 365 Developer Program sandbox (which repeatedly
 rejected this team across multiple accounts).
 
-Proves Questions 1 & 2 of the NETRA pitch live, same as the Microsoft Graph
+Proves Questions 1 & 2 of the TriNetra pitch live, same as the Microsoft Graph
 module:
   1. WHAT IS RUNNING?   -> GET /orgs/{org}/installations (real installed GitHub Apps)
   2. WHAT CAN IT TOUCH? -> the `permissions` object on each installation (real granted scopes)

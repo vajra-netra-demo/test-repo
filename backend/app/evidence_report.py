@@ -44,7 +44,7 @@ def _set_cell_text(cell, text, bold=False, color=None):
 def generate_evidence_report(tenant_name: str, tools: list, clauses: list, output_path: str, assessment_mode: str):
     doc = Document()
 
-    title = doc.add_heading("NETRA — Data Privacy & Compliance Evidence Report", level=0)
+    title = doc.add_heading("TriNetra — Data Privacy & Compliance Evidence Report", level=0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     meta = doc.add_paragraph()

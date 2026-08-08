@@ -35,13 +35,13 @@ export function LoginView() {
             N
           </div>
           <div>
-            <div className="text-[18px] font-extrabold tracking-wide text-text">NETRA</div>
+            <div className="text-[18px] font-extrabold tracking-wide text-text">TriNetra</div>
             <div className="text-[11px] text-muted">Privacy & Shadow-IT Discovery</div>
           </div>
         </div>
 
         <h1 className="mb-1 text-[19px] font-semibold text-text">Sign in</h1>
-        <p className="mb-5 text-[13px] text-muted">Use your NETRA account to view or manage discovery.</p>
+        <p className="mb-5 text-[13px] text-muted">Use your TriNetra account to view or manage discovery.</p>
 
         <form onSubmit={onSubmit} className="space-y-3.5">
           <div>

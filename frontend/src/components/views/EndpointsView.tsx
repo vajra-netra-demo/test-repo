@@ -39,7 +39,7 @@ export function EndpointsView() {
       <div className="mb-6">
         <h1 className="mb-0.5 text-[21px] font-semibold text-text">Endpoint Devices</h1>
         <p className="m-0 text-[13px] text-muted">
-          Devices reporting via the NETRA endpoint agent — reads real browser extensions and
+          Devices reporting via the TriNetra endpoint agent — reads real browser extensions and
           installed software, catching what OAuth-based discovery structurally can't see (see
           agent/README.md to enroll a machine)
         </p>

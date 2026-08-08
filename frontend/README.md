@@ -1,4 +1,4 @@
-# NETRA frontend (React + TypeScript + Tailwind)
+# TriNetra frontend (React + TypeScript + Tailwind)
 
 A component-based rewrite of `backend/static/index.html` — same views, same
 API calls, same visual design tokens, but as a proper Vite/React app instead

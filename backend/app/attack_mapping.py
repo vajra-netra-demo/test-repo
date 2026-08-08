@@ -1,13 +1,13 @@
-"""Maps NETRA's own real findings (risk_flags from app/risk_engine.py) to
+"""Maps TriNetra's own real findings (risk_flags from app/risk_engine.py) to
 real MITRE ATT&CK technique IDs.
 
 This is deliberately NOT an attack-simulation engine. It runs nothing, sends
 no traffic, executes no adversary behavior — it is a lookup table that gives
-a SOC analyst standard ATT&CK-framework language for a finding NETRA has
+a SOC analyst standard ATT&CK-framework language for a finding TriNetra has
 already made through discovery, the same way a SIEM correlation rule labels
 an already-logged event. The team explicitly walked back a "Jatayu Red Team"
 attack-simulation framing once before (see the handover doc's Section 5/9)
-because it has no connection to NETRA's actual discovery/governance thesis —
+because it has no connection to TriNetra's actual discovery/governance thesis —
 this module stays on the discovery side of that line on purpose: it explains
 what an existing finding means in attacker terms, it doesn't go looking for
 new ones by acting like an attacker.
@@ -45,7 +45,7 @@ ATTACK_MAPPING_RULES = [
         "technique_id": "T1526",
         "technique_name": "Cloud Service Discovery",
         "tactic": "Discovery",
-        "rationale": "If NETRA itself cannot verify whether a granted tool is actually being used, "
+        "rationale": "If TriNetra itself cannot verify whether a granted tool is actually being used, "
                      "that same blind spot is what this discovery technique exploits from the "
                      "attacker's side — nobody is watching this connection either way.",
     },
