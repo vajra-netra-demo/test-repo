@@ -1,5 +1,16 @@
+import { useRef } from "react";
 import { Hourglass } from "lucide-react";
 import type { ScanProgress } from "../../types";
+
+// Formats a real extrapolated duration, not a fabricated countdown — see
+// the phaseStartRef tracking below for where the estimate comes from.
+function formatEta(ms: number): string {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  if (totalSeconds < 8) return "finishing up";
+  if (totalSeconds < 60) return `~${totalSeconds}s remaining`;
+  const minutes = Math.round(totalSeconds / 60);
+  return `~${minutes} min remaining`;
+}
 
 const PHASE_LABEL: Record<string, string> = {
   starting: "Starting live scan",
@@ -45,6 +56,25 @@ export function ScanProgressBanner({ progress }: { progress: ScanProgress | null
   const pct = known ? Math.min(100, Math.round((current / total) * 100)) : 0;
   const dash = (pct / 100) * CIRCUMFERENCE;
 
+  // Real wall-clock throughput, not a fabricated countdown: remembers when
+  // the CURRENT phase started (both time and count), so the estimate is
+  // "how long has this phase's own rate taken to do N items, extrapolated
+  // to the rest" rather than blending across phases with very different
+  // per-item costs (discovering = one DB write/GitHub lookup per tool,
+  // assessing = one real LLM call per tool in REAL mode — mixing those
+  // would badly skew the number right at a phase boundary). Resets for
+  // free every new scan since the parent only mounts this component while
+  // `scanning` is true, so there's no cross-run stale state to clear.
+  const phaseStartRef = useRef<{ phase: string; at: number; current: number } | null>(null);
+  if (!phaseStartRef.current || phaseStartRef.current.phase !== phase) {
+    phaseStartRef.current = { phase, at: Date.now(), current };
+  }
+  const doneInPhase = current - phaseStartRef.current.current;
+  const etaLabel =
+    known && phase !== "complete" && doneInPhase > 0
+      ? formatEta(((Date.now() - phaseStartRef.current.at) / doneInPhase) * (total - current))
+      : null;
+
   return (
     <div className="animate-view-fade glass mb-5 flex items-center gap-4 overflow-hidden rounded-xl border border-accent/30 bg-accent-light px-5 py-4">
       <div className="relative shrink-0">
@@ -83,11 +113,16 @@ export function ScanProgressBanner({ progress }: { progress: ScanProgress | null
               {current} / {total}
             </span>
           )}
+          {etaLabel && !stopping && (
+            <span className="ml-2 font-mono text-[12px] font-semibold text-accent-dark">· {etaLabel}</span>
+          )}
         </div>
         <div className="mt-0.5 text-[12px] text-accent/80">
           {stopping
             ? "Finishing whatever's already in flight, then stopping — whatever's been assessed so far is kept."
-            : "This can take a few minutes for a large tool count. Feel free to keep browsing the dashboard meanwhile."}
+            : etaLabel
+              ? "Estimate based on this scan's own progress so far — updates as it goes."
+              : "This can take a few minutes for a large tool count. Feel free to keep browsing the dashboard meanwhile."}
         </div>
       </div>
     </div>
