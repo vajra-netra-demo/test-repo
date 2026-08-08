@@ -69,62 +69,98 @@ export function ScanProgressBanner({ progress }: { progress: ScanProgress | null
   if (!phaseStartRef.current || phaseStartRef.current.phase !== phase) {
     phaseStartRef.current = { phase, at: Date.now(), current };
   }
+  const now = Date.now();
   const doneInPhase = current - phaseStartRef.current.current;
-  const etaLabel =
-    known && phase !== "complete" && doneInPhase > 0
-      ? formatEta(((Date.now() - phaseStartRef.current.at) / doneInPhase) * (total - current))
-      : null;
+  const elapsedInPhaseMs = now - phaseStartRef.current.at;
+  // null (not 0) until at least one item has completed in this phase —
+  // there's no real rate to extrapolate from yet, so there's nothing
+  // honest to show, same reasoning as the item-count ring showing a plain
+  // spinner instead of a fabricated 0%.
+  const remainingMs = doneInPhase > 0 ? (elapsedInPhaseMs / doneInPhase) * (total - current) : null;
+  const etaLabel = known && phase !== "complete" && remainingMs !== null ? formatEta(remainingMs) : null;
+
+  // A second, separate bar tracking estimated wall-clock time (elapsed vs.
+  // elapsed+remaining), distinct from the ring above which tracks item
+  // count -- the two move at different rates whenever per-item speed
+  // varies within a phase (e.g. a couple of slow real LLM calls), so
+  // collapsing them into one number would misrepresent one or the other.
+  const timeFraction =
+    phase === "complete"
+      ? 1
+      : remainingMs !== null && elapsedInPhaseMs + remainingMs > 0
+        ? Math.min(1, elapsedInPhaseMs / (elapsedInPhaseMs + remainingMs))
+        : 0;
+  const showTimeBar = known && !stopping && (phase === "complete" || remainingMs !== null);
 
   return (
-    <div className="animate-view-fade glass mb-5 flex items-center gap-4 overflow-hidden rounded-xl border border-accent/30 bg-accent-light px-5 py-4">
-      <div className="relative shrink-0">
-        <svg
-          width={60}
-          height={60}
-          viewBox="0 0 60 60"
-          className={known ? "" : "animate-spin"}
-          style={known ? undefined : { animationDuration: "1.4s" }}
-        >
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth={6} className="text-accent/15" />
-          <circle
-            cx={cx}
-            cy={cy}
-            r={r}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={6}
-            strokeLinecap="round"
-            strokeDasharray={known ? `${dash} ${CIRCUMFERENCE - dash}` : `${CIRCUMFERENCE * 0.25} ${CIRCUMFERENCE * 0.75}`}
-            transform={`rotate(-90 ${cx} ${cy})`}
-            className="text-accent transition-[stroke-dasharray] duration-500 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-accent">
-          <Hourglass size={14} strokeWidth={2.25} />
-          {known && <span className="mt-0.5 font-mono text-[11px] font-bold tabular-nums">{pct}%</span>}
+    <div className="animate-view-fade glass mb-5 flex flex-col gap-3 overflow-hidden rounded-xl border border-accent/30 bg-accent-light px-5 py-4">
+      <div className="flex items-center gap-4">
+        <div className="relative shrink-0">
+          <svg
+            width={60}
+            height={60}
+            viewBox="0 0 60 60"
+            className={known ? "" : "animate-spin"}
+            style={known ? undefined : { animationDuration: "1.4s" }}
+          >
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth={6} className="text-accent/15" />
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={6}
+              strokeLinecap="round"
+              strokeDasharray={known ? `${dash} ${CIRCUMFERENCE - dash}` : `${CIRCUMFERENCE * 0.25} ${CIRCUMFERENCE * 0.75}`}
+              transform={`rotate(-90 ${cx} ${cy})`}
+              className="text-accent transition-[stroke-dasharray] duration-500 ease-out"
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-accent">
+            <Hourglass size={14} strokeWidth={2.25} />
+            {known && <span className="mt-0.5 font-mono text-[11px] font-bold tabular-nums">{pct}%</span>}
+          </div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-[13.5px] font-bold text-accent">
+            {PHASE_LABEL[phase] ?? "Live scan in progress"}
+            {known && (
+              <span className="ml-2 font-mono text-[12px] font-semibold tabular-nums text-accent-dark">
+                {current} / {total}
+              </span>
+            )}
+            {etaLabel && !stopping && (
+              <span className="ml-2 font-mono text-[12px] font-semibold text-accent-dark">· {etaLabel}</span>
+            )}
+          </div>
+          <div className="mt-0.5 text-[12px] text-accent/80">
+            {stopping
+              ? "Finishing whatever's already in flight, then stopping — whatever's been assessed so far is kept."
+              : etaLabel
+                ? "Estimate based on this scan's own progress so far — updates as it goes."
+                : "This can take a few minutes for a large tool count. Feel free to keep browsing the dashboard meanwhile."}
+          </div>
         </div>
       </div>
 
-      <div className="min-w-0">
-        <div className="text-[13.5px] font-bold text-accent">
-          {PHASE_LABEL[phase] ?? "Live scan in progress"}
-          {known && (
-            <span className="ml-2 font-mono text-[12px] font-semibold tabular-nums text-accent-dark">
-              {current} / {total}
+      {showTimeBar && (
+        <div>
+          <div className="mb-1 flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wide text-accent-dark/70">
+            <span>Time elapsed</span>
+            <span className="font-mono normal-case tracking-normal">
+              {phase === "complete" ? "done" : (etaLabel ?? "estimating…")}
             </span>
-          )}
-          {etaLabel && !stopping && (
-            <span className="ml-2 font-mono text-[12px] font-semibold text-accent-dark">· {etaLabel}</span>
-          )}
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-accent/15">
+            <div
+              className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
+              style={{ width: `${Math.round(timeFraction * 100)}%` }}
+            />
+          </div>
         </div>
-        <div className="mt-0.5 text-[12px] text-accent/80">
-          {stopping
-            ? "Finishing whatever's already in flight, then stopping — whatever's been assessed so far is kept."
-            : etaLabel
-              ? "Estimate based on this scan's own progress so far — updates as it goes."
-              : "This can take a few minutes for a large tool count. Feel free to keep browsing the dashboard meanwhile."}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
