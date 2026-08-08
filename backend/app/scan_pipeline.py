@@ -64,8 +64,18 @@ def run_full_cycle(
         previous_scopes_by_id = {
             t.id: t.oauth_scopes for t in db.query(SaaSTool).filter(SaaSTool.source == "live").all()
         }
-        db.query(SaaSTool).filter(SaaSTool.source == "live").delete()
         total_live = len(live_tools)
+        # Built up in memory and only swapped in if the loop runs to
+        # completion -- deleting the old rows up front used to commit
+        # unconditionally after the loop, so a Stop click partway through
+        # discovery permanently kept only however many new rows had been
+        # built so far and lost the rest, i.e. the total tool count would
+        # visibly (and permanently) shrink on every cancelled scan. "Stop
+        # means stop, keep what you already had" (already the rule for the
+        # assessing phase below) applies here too: cancelling discovery now
+        # leaves the previous live tools untouched instead of replacing them
+        # with a partial set.
+        new_rows = []
         for i, record in enumerate(live_tools, start=1):
             if _cancelled():
                 was_cancelled = True
@@ -83,7 +93,7 @@ def run_full_cycle(
             risk = assess_tool(record)
             triage_input = {**record, "source": "live", "remediated": False, **risk}
             triage = triage_tool(triage_input)
-            db.add(SaaSTool(
+            new_rows.append(SaaSTool(
                 id=record["id"], tool_name=record["tool_name"], vendor=record["vendor"],
                 category=record["category"], connected_via=record["connected_via"],
                 department=record["department"], connected_by_role=record["connected_by_role"],
@@ -105,10 +115,16 @@ def run_full_cycle(
                 })
             live_ingested = i
             _report(i, total_live, "discovering")
-        db.commit()
 
-        if high_risk_live_findings:
-            notify_high_risk_findings(high_risk_live_findings)
+        if was_cancelled:
+            high_risk_live_findings = []
+        else:
+            db.query(SaaSTool).filter(SaaSTool.source == "live").delete()
+            db.add_all(new_rows)
+            db.commit()
+
+            if high_risk_live_findings:
+                notify_high_risk_findings(high_risk_live_findings)
 
     # Re-assess every live/sample tool every cycle so nothing is ever left
     # stale (their usage/dormancy/scopes can genuinely drift over time).
