@@ -288,7 +288,20 @@ def scan_installed_software():
 
 
 def build_report(employee, department, agent_version="0.1.0"):
-    findings = scan_browser_extensions() + scan_installed_software()
+    # Real step-by-step status, not a fabricated percentage/ETA -- dpkg-query
+    # and the browser-extension directory walk don't expose incremental
+    # progress, so a fake interpolated number would be exactly the kind of
+    # invented signal this project avoids everywhere else. These three
+    # phases are genuine: each print marks a real transition, not a guess.
+    print("[1/3] Scanning browser extensions...", flush=True)
+    extension_findings = scan_browser_extensions()
+    print(f"      found {len(extension_findings)}", flush=True)
+
+    print("[2/3] Scanning installed software...", flush=True)
+    software_findings = scan_installed_software()
+    print(f"      found {len(software_findings)}", flush=True)
+
+    findings = extension_findings + software_findings
     return {
         "device_id": _stable_device_id(),
         "hostname": socket.gethostname(),
@@ -348,6 +361,7 @@ def main():
         print(json.dumps(report, indent=2))
         return
 
+    print(f"[3/3] Submitting {len(report['findings'])} findings to backend...", flush=True)
     try:
         result = submit(args.backend_url, args.token, report)
     except urllib.error.HTTPError as e:
@@ -357,7 +371,7 @@ def main():
         print(f"Submission failed: {e.reason}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Reported {result['findings_ingested']} findings for device {result['device_id']}")
+    print(f"[100%] Done — reported {result['findings_ingested']} findings for device {result['device_id']}")
 
 
 if __name__ == "__main__":
