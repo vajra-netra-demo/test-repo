@@ -26,7 +26,7 @@ import type {
 // backend explicitly. In dev, Vite's proxy (vite.config.ts) makes relative
 // paths work too, so VITE_API_BASE_URL only needs to be set for a real
 // standalone static deployment.
-const FALLBACK_BACKEND_URL = "https://test-repo-production-63cf.up.railway.app";
+const FALLBACK_BACKEND_URL = "https://test-repo-production-1d80.up.railway.app";
 
 function resolveApiBase(): string {
   const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
