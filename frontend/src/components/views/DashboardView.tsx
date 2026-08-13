@@ -24,7 +24,8 @@ import { RiskChangesPanel } from "../dashboard/RiskChangesPanel";
 import { PermissionChangesPanel } from "../dashboard/PermissionChangesPanel";
 import { RiskAlertsModal } from "../dashboard/RiskAlertsModal";
 import { ToolsTable } from "../dashboard/ToolsTable";
-import type { AttackPaths, GraphInsights, PermissionChanges, RiskChanges } from "../../types";
+import { RedAgentPanel } from "../dashboard/RedAgentPanel";
+import type { AttackPaths, GraphInsights, PermissionChanges, RedAgentFinding, RiskChanges } from "../../types";
 
 function counts(tools: SaaSTool[]): Record<RiskLevel, number> {
   return {
@@ -65,6 +66,8 @@ export function DashboardView() {
   const [riskChangesLoading, setRiskChangesLoading] = useState(true);
   const [permissionChanges, setPermissionChanges] = useState<PermissionChanges | null>(null);
   const [permissionChangesLoading, setPermissionChangesLoading] = useState(true);
+  const [redAgentFindings, setRedAgentFindings] = useState<RedAgentFinding[] | null>(null);
+  const [redAgentLoading, setRedAgentLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState<KpiFilter>("all");
   const [alertsModalFilter, setAlertsModalFilter] = useState<KpiFilter | null>(null);
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
@@ -144,6 +147,20 @@ export function DashboardView() {
     }
   }, []);
 
+  // Not tenant-scoped — these are real technique executions against real
+  // machines (netra-mvp/agent/red_agent.py), not per-tenant sample data.
+  const loadRedAgentFindings = useCallback(async () => {
+    setRedAgentLoading(true);
+    try {
+      setRedAgentFindings(await api.getRedAgentFindings());
+    } catch {
+      /* best-effort, same as the other Risk Insights panels above */
+      setRedAgentFindings(null);
+    } finally {
+      setRedAgentLoading(false);
+    }
+  }, []);
+
   const reload = useCallback(async () => {
     await Promise.all([
       loadTools(currentTenant),
@@ -152,11 +169,22 @@ export function DashboardView() {
       loadAttackPaths(currentTenant),
       loadRiskChanges(currentTenant),
       loadPermissionChanges(currentTenant),
+      loadRedAgentFindings(),
     ]);
-  }, [currentTenant, loadTools, loadHistory, loadGraphInsights, loadAttackPaths, loadRiskChanges, loadPermissionChanges]);
+  }, [
+    currentTenant,
+    loadTools,
+    loadHistory,
+    loadGraphInsights,
+    loadAttackPaths,
+    loadRiskChanges,
+    loadPermissionChanges,
+    loadRedAgentFindings,
+  ]);
 
   useEffect(() => {
     loadStatus();
+    loadRedAgentFindings();
     api.getTenants().then(setTenantProfiles).catch(() => {});
     // Catches a scan already running when this page loads — e.g. started
     // by the scheduler's auto re-scan, or from another browser tab — not
@@ -449,6 +477,9 @@ export function DashboardView() {
 
           <SectionTitle>Permission Changes — Real Scope Creep Detection</SectionTitle>
           <PermissionChangesPanel data={permissionChanges} loading={permissionChangesLoading} />
+
+          <SectionTitle>Red Agent — Real Technique Executions Detected</SectionTitle>
+          <RedAgentPanel data={redAgentFindings} loading={redAgentLoading} />
         </>
       )}
 

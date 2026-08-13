@@ -268,6 +268,21 @@ export interface PermissionChanges {
   total_changes_found: number;
 }
 
+// GET /discovery/red-agent-runs — real MITRE ATT&CK Discovery-tactic
+// technique executions reported by netra-mvp/agent/red_agent.py.
+export interface RedAgentFinding {
+  id: string;
+  run_id: string;
+  hostname: string;
+  os: string;
+  technique_id: string;
+  technique_name: string;
+  tactic: string;
+  command: string;
+  output_snippet: string | null;
+  executed_at: string;
+}
+
 // GET /report/history
 export interface ReadinessHistoryPoint {
   timestamp: string;

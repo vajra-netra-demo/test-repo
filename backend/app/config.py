@@ -49,6 +49,12 @@ ANTHROPIC_FOUNDRY_RESOURCE = _env("ANTHROPIC_FOUNDRY_RESOURCE")
 # device reports.
 ENDPOINT_AGENT_TOKEN = _env("ENDPOINT_AGENT_TOKEN")
 
+# Same shared-token pattern, for the separate Red Agent
+# (netra-mvp/agent/red_agent.py) — kept as its own token rather than
+# reusing ENDPOINT_AGENT_TOKEN so either one can be rotated or disabled
+# independently of the other.
+RED_AGENT_TOKEN = _env("RED_AGENT_TOKEN")
+
 # Tier-2 discovery providers — code shaped and ready, but credentials for
 # both belong to systems outside this team's control. Left unconfigured
 # (is_configured() returns False for both) until real access exists; see

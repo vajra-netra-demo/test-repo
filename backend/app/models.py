@@ -118,6 +118,36 @@ class EndpointDevice(Base):
     agent_version = Column(String, nullable=True)
 
 
+class RedAgentFinding(Base):
+    """One real MITRE ATT&CK technique execution reported by TriNetra's own
+    Red Agent (netra-mvp/agent/red_agent.py) — a deliberately narrow,
+    scoped attack-simulation counterpart to the passive discovery agents.
+
+    Every technique the Red Agent can run belongs to the Discovery tactic
+    only (see red_agent.py's TECHNIQUES list): read-only enumeration
+    commands with no credential access, persistence, or lateral-movement
+    capability. This table is an append-only log of real runs against a
+    real, team-owned machine — one row per technique per run, grouped by
+    run_id — not a claim of full adversary emulation. See
+    app/attack_mapping.py's docstring for why this project deliberately
+    stayed on the discovery side of the "attack simulation" line before;
+    this table is the one narrow, explicit exception, and stays that way
+    on purpose."""
+
+    __tablename__ = "red_agent_findings"
+
+    id = Column(String, primary_key=True, index=True)
+    run_id = Column(String, nullable=False, index=True)
+    hostname = Column(String, nullable=False)
+    os = Column(String, nullable=False)
+    technique_id = Column(String, nullable=False)
+    technique_name = Column(String, nullable=False)
+    tactic = Column(String, nullable=False)
+    command = Column(String, nullable=False)
+    output_snippet = Column(String, nullable=True)
+    executed_at = Column(String, nullable=False)
+
+
 class OffboardedEmployee(Base):
     """Marks an employee (matched by the free-text name reported by the
     endpoint agent, see EndpointDevice.employee) as departed, so their

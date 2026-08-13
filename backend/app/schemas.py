@@ -61,6 +61,39 @@ class EndpointReportRequest(BaseModel):
     findings: List[EndpointFinding] = []
 
 
+class RedAgentTechniqueResult(BaseModel):
+    """One technique execution reported by netra-mvp/agent/red_agent.py."""
+
+    technique_id: str
+    technique_name: str
+    tactic: str
+    command: str
+    output_snippet: Optional[str] = None
+    executed_at: str
+
+
+class RedAgentReportRequest(BaseModel):
+    run_id: str
+    hostname: str
+    os: str
+    results: List[RedAgentTechniqueResult] = []
+
+
+class RedAgentFindingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    run_id: str
+    hostname: str
+    os: str
+    technique_id: str
+    technique_name: str
+    tactic: str
+    command: str
+    output_snippet: Optional[str] = None
+    executed_at: str
+
+
 class EndpointDeviceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

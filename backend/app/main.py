@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.auth import bootstrap_admin_user
 from app.config import ADMIN_PASSWORD, ADMIN_USERNAME
 from app.database import Base, SessionLocal, engine, ensure_new_columns
-from app.routers import auth, tools, report, discovery, tenants, endpoint, regulation
+from app.routers import auth, tools, report, discovery, tenants, endpoint, regulation, red_agent
 from app.scheduler import start_scheduler
 from app.tasks import ensure_worker_running
 
@@ -38,6 +38,7 @@ app.include_router(discovery.router)
 app.include_router(tenants.router)
 app.include_router(endpoint.router)
 app.include_router(regulation.router)
+app.include_router(red_agent.router)
 
 # presidio-analyzer + spacy (requirements-classification.txt) aren't in the
 # base requirements.txt — a real deploy without them shouldn't crash the

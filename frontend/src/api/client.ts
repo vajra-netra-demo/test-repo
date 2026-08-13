@@ -12,6 +12,7 @@ import type {
   LoginResponse,
   PermissionChanges,
   ReadinessHistoryPoint,
+  RedAgentFinding,
   RegulationSearchResult,
   RiskChanges,
   SaaSTool,
@@ -177,6 +178,7 @@ export const api = {
     request<RiskChanges>(`/discovery/risk-changes${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
   getPermissionChanges: (tenant?: string) =>
     request<PermissionChanges>(`/discovery/permission-changes${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ""}`),
+  getRedAgentFindings: () => request<RedAgentFinding[]>("/discovery/red-agent-runs"),
 
   // Employees (per-employee drill-down + offboarding — derived entirely
   // from EndpointDevice.employee, no separate employee directory exists)
